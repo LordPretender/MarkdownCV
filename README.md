@@ -14,7 +14,7 @@ Modèle de CV en une page, statique, sans framework ni dépendance. Les données
 - `exemple.md` : modèle fictif dont le fichier de données reprend le format
 - `src/` : gabarit `index.html` (contenu de la page et script du tiroir de détail) et `style.css` (mise en page, thèmes clair et sombre, responsive), sans aucune donnée
 - `scripts/` : script de build, voir `scripts/README.md`
-- `build/` : site généré, à ne pas éditer à la main
+- `build/` : site généré, à ne pas éditer à la main ; non versionné (ignoré par git), à régénérer après un clone
 
 ## Inspiration et licence
 

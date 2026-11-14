@@ -1,4 +1,4 @@
-"""Génère le site (index.html + fichiers statiques) à partir de cv.md et du gabarit src/index.html."""
+"""Génère le site (index.html + fichiers statiques) à partir d'un fichier markdown de données et du gabarit src/index.html."""
 
 import argparse
 import html
