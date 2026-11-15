@@ -11,8 +11,10 @@ from lecture_cv import (
     BLOC_ENVIRONNEMENT,
     CHAMPS_FRONT,
     CONTEXTE,
+    DOSSIER_GABARIT,
     ENTREPRISE,
     ETABLISSEMENT,
+    FICHIER_GABARIT,
     ICONE,
     INTRO,
     LIEU,
@@ -21,6 +23,8 @@ from lecture_cv import (
     NIVEAU,
     PERIODE,
     PERIODE_DETAIL,
+    PREFIXES_URL,
+    RACINE,
     SECTION_ACCUEIL,
     SECTION_COMPETENCES,
     SECTION_DIPLOMES,
@@ -38,12 +42,11 @@ from lecture_cv import (
     URL,
     ErreurContenu,
     decouper,
+    icones_du_gabarit,
     identifiant,
 )
+from valider_cv import NIVEAU_ERREUR, compter, valider
 
-RACINE = Path(__file__).resolve().parent.parent
-DOSSIER_GABARIT = "src"
-FICHIER_GABARIT = "index.html"
 FICHIER_FAVICON = "favicon.svg"
 DOSSIER_BUILD = "build"
 PREFIXE_DETAIL_EXPERIENCE = "d-"
@@ -193,7 +196,7 @@ def rendre_liens(section):
     for entree in section.entrees:
         contexte = f"{SECTION_LIENS} / {entree.titre}"
         url = champ(entree.champs, URL, contexte)
-        if not url.startswith(("https://", "http://")):
+        if not url.startswith(PREFIXES_URL):
             raise ErreurContenu(f"{contexte} : « {URL} » doit commencer par http:// ou https://")
         lignes.append(
             f'<li><a class="card" href="{echapper(url)}">'
@@ -300,10 +303,17 @@ def rendre_gabarit(gabarit, destination, valeurs, fragments):
 
 def construire(source, destination):
     dossier_gabarit = RACINE / DOSSIER_GABARIT
-    gabarit = (dossier_gabarit / FICHIER_GABARIT).read_text(encoding="utf-8")
-    icones = set(re.findall(r'<symbol id="i-([\w-]+)"', gabarit))
+    icones = icones_du_gabarit(dossier_gabarit / FICHIER_GABARIT)
 
-    front, sections = decouper(source.read_text(encoding="utf-8"))
+    texte = source.read_text(encoding="utf-8")
+    anomalies = valider(texte, icones)
+    for anomalie in anomalies:
+        print(anomalie, file=sys.stderr)
+    erreurs = compter(anomalies, NIVEAU_ERREUR)
+    if erreurs:
+        raise ErreurContenu(f"{erreurs} erreur(s) dans {source}, build annulé")
+
+    front, sections = decouper(texte)
     valeurs, fragments = preparer(front, sections, icones)
 
     destination.mkdir(parents=True, exist_ok=True)

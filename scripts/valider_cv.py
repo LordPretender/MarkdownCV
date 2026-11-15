@@ -12,6 +12,8 @@ from lecture_cv import (
     CONTEXTE,
     ENTREPRISE,
     ETABLISSEMENT,
+    DOSSIER_GABARIT,
+    FICHIER_GABARIT,
     ICONE,
     INTRO,
     LIEU,
@@ -20,6 +22,8 @@ from lecture_cv import (
     NIVEAU,
     PERIODE,
     PERIODE_DETAIL,
+    PREFIXES_URL,
+    RACINE,
     SECTION_ACCUEIL,
     SECTION_COMPETENCES,
     SECTION_DIPLOMES,
@@ -40,8 +44,7 @@ from lecture_cv import (
     icones_du_gabarit,
 )
 
-RACINE = Path(__file__).resolve().parent.parent
-GABARIT = RACINE / "src" / "index.html"
+GABARIT = RACINE / DOSSIER_GABARIT / FICHIER_GABARIT
 
 NIVEAU_ERREUR = "ERREUR"
 NIVEAU_AVERTISSEMENT = "AVERT."
@@ -93,7 +96,6 @@ CHAMPS_ENTREE_REQUIS = {
 CHAMPS_ENTREE_OPTIONNELS = {SECTION_PROJETS: [TITRE_DETAIL, PERIODE_DETAIL]}
 SECTIONS_AVEC_BLOCS = [SECTION_EXPERIENCE, SECTION_PROJETS]
 CHAMPS_PERIODE = [PERIODE, PERIODE_DETAIL]
-PREFIXES_URL = ("https://", "http://")
 
 
 @dataclass

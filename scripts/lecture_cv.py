@@ -3,6 +3,12 @@
 import re
 import unicodedata
 from dataclasses import dataclass, field
+from pathlib import Path
+
+RACINE = Path(__file__).resolve().parent.parent
+DOSSIER_GABARIT = "src"
+FICHIER_GABARIT = "index.html"
+PREFIXES_URL = ("https://", "http://")
 
 SECTION_ACCUEIL = "Accueil"
 SECTION_PROFIL = "Profil"
@@ -98,12 +104,17 @@ def icones_du_gabarit(chemin):
     return set(re.findall(r'<symbol id="i-([\w-]+)"', chemin.read_text(encoding="utf-8")))
 
 
+def signaler(anomalies, numero, contexte, message):
+    """Lève ErreurContenu si `anomalies` est None, sinon consigne (numéro, contexte, message) et laisse la lecture continuer."""
+    if anomalies is None:
+        raise ErreurContenu(f"{contexte} : {message}" if contexte else message)
+    anomalies.append((numero, contexte, message))
+
+
 def lire_champ(ligne, contexte, numero=0, anomalies=None):
     correspondance = RE_CHAMP.match(ligne)
     if not correspondance:
-        if anomalies is None:
-            raise ErreurContenu(f"{contexte} : ligne non reconnue « {ligne} »")
-        anomalies.append((numero, contexte, f"ligne non reconnue « {ligne} »"))
+        signaler(anomalies, numero, contexte, f"ligne non reconnue « {ligne} »")
         return None
     return correspondance.group(1), correspondance.group(2)
 
@@ -111,10 +122,9 @@ def lire_champ(ligne, contexte, numero=0, anomalies=None):
 def lire_front_matter(lignes, anomalies=None):
     if not lignes or lignes[0].strip() != MARQUEUR_FRONT:
         raise ErreurContenu("front-matter absent (la première ligne doit être « --- »)")
-    try:
-        fin = lignes.index(MARQUEUR_FRONT, 1)
-    except ValueError:
-        raise ErreurContenu("front-matter non refermé (ligne « --- » manquante)") from None
+    fin = next((i for i, ligne in enumerate(lignes[1:], 1) if ligne.strip() == MARQUEUR_FRONT), None)
+    if fin is None:
+        raise ErreurContenu("front-matter non refermé (ligne « --- » manquante)")
     front = FrontMatter()
     for numero, ligne in enumerate(lignes[1:fin], 2):
         if ligne.strip():
@@ -163,10 +173,7 @@ def decouper(texte, anomalies=None):
             nom = brut[len(MARQUEUR_BLOC):]
             bloc_orphelin = not sections or not sections[-1].entrees
             if bloc_orphelin:
-                message = f"bloc « {nom} » placé hors d'une entrée (###)"
-                if anomalies is None:
-                    raise ErreurContenu(message)
-                anomalies.append((numero, sections[-1].nom if sections else "", message))
+                signaler(anomalies, numero, sections[-1].nom if sections else "", f"bloc « {nom} » placé hors d'une entrée (###)")
             else:
                 sections[-1].entrees[-1].blocs.append(Bloc(nom, ligne=numero))
         elif brut.startswith(MARQUEUR_ENTREE):
