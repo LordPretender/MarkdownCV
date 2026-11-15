@@ -68,7 +68,7 @@ LONGUEUR_PROFIL_MAX = 700
 RE_EMAIL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 RE_TELEPHONE = re.compile(r"^\+?[\d\s().-]+$")
 MOIS_OU_ANNEE = r"(?:[^\W\d_]+\.?\s)?\d{4}"
-RE_PERIODE = re.compile(rf"^{MOIS_OU_ANNEE}(?:\s–\s(?:auj\.|{MOIS_OU_ANNEE}))?$")
+RE_PERIODE = re.compile(rf"^{MOIS_OU_ANNEE}(?:\s–\s(?:auj\.|aujourd['’]hui|{MOIS_OU_ANNEE}))?$")
 RE_CHIFFRE = re.compile(r"\d")
 
 PARENTHESE_OUVRANTE = "("
