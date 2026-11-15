@@ -5,9 +5,41 @@ import html
 import re
 import shutil
 import sys
-import unicodedata
-from dataclasses import dataclass, field
 from pathlib import Path
+
+from lecture_cv import (
+    BLOC_ENVIRONNEMENT,
+    CHAMPS_FRONT,
+    CONTEXTE,
+    ENTREPRISE,
+    ETABLISSEMENT,
+    ICONE,
+    INTRO,
+    LIEU,
+    LOGO,
+    MARQUEUR_PUCE,
+    NIVEAU,
+    PERIODE,
+    PERIODE_DETAIL,
+    SECTION_ACCUEIL,
+    SECTION_COMPETENCES,
+    SECTION_DIPLOMES,
+    SECTION_EXPERIENCE,
+    SECTION_LANGUES,
+    SECTION_LIENS,
+    SECTION_PROFIL,
+    SECTION_PROJETS,
+    SECTIONS,
+    SOUS_TITRE,
+    STATUT,
+    TEXTE,
+    TITRE,
+    TITRE_DETAIL,
+    URL,
+    ErreurContenu,
+    decouper,
+    identifiant,
+)
 
 RACINE = Path(__file__).resolve().parent.parent
 DOSSIER_GABARIT = "src"
@@ -19,151 +51,18 @@ PREFIXE_DETAIL_PROJET = "p-"
 FRAGMENT_NAV = "nav"
 FRAGMENT_DETAILS = "details"
 
-SECTION_ACCUEIL = "Accueil"
-SECTION_PROFIL = "Profil"
-SECTION_EXPERIENCE = "Expérience"
-SECTION_COMPETENCES = "Compétences"
-SECTION_PROJETS = "Projets"
-SECTION_DIPLOMES = "Diplômes"
-SECTION_LANGUES = "Langues"
-SECTION_LIENS = "Liens"
-SECTIONS = [
-    SECTION_ACCUEIL,
-    SECTION_PROFIL,
-    SECTION_EXPERIENCE,
-    SECTION_COMPETENCES,
-    SECTION_PROJETS,
-    SECTION_DIPLOMES,
-    SECTION_LANGUES,
-    SECTION_LIENS,
-]
-
-CHAMPS_FRONT = ["nom", "titre", "description", "initiales", "email", "pied"]
-TITRE = "Titre"
-ICONE = "Icône"
-INTRO = "Intro"
-STATUT = "Statut"
-SOUS_TITRE = "Sous-titre"
-TEXTE = "Texte"
-
 CLE_ACCUEIL_STATUT = "accueil_statut"
 CLE_ACCUEIL_SOUS_TITRE = "accueil_sous_titre"
-ENTREPRISE = "Entreprise"
-LIEU = "Lieu"
-PERIODE = "Période"
-LOGO = "Logo"
-CONTEXTE = "Contexte"
-TITRE_DETAIL = "Titre détail"
-PERIODE_DETAIL = "Période détail"
-ETABLISSEMENT = "Établissement"
-NIVEAU = "Niveau"
-URL = "Url"
-BLOC_ENVIRONNEMENT = "Environnement"
-
-RE_CHAMP = re.compile(r"^([^:#\-][^:]*?):\s*(.*)$")
-
-
-class ErreurContenu(Exception):
-    pass
-
-
-@dataclass
-class Bloc:
-    nom: str
-    lignes: list = field(default_factory=list)
-
-
-@dataclass
-class Entree:
-    titre: str
-    champs: dict = field(default_factory=dict)
-    puces: list = field(default_factory=list)
-    blocs: list = field(default_factory=list)
-
-
-@dataclass
-class Section:
-    nom: str
-    champs: dict = field(default_factory=dict)
-    entrees: list = field(default_factory=list)
 
 
 def echapper(valeur):
     return html.escape(valeur, quote=True).replace("&#x27;", "'")
 
 
-def identifiant(nom):
-    decompose = unicodedata.normalize("NFD", nom)
-    return "".join(c for c in decompose if not unicodedata.combining(c)).lower()
-
-
-def lire_champ(ligne, contexte):
-    correspondance = RE_CHAMP.match(ligne)
-    if not correspondance:
-        raise ErreurContenu(f"{contexte} : ligne non reconnue « {ligne} »")
-    return correspondance.group(1), correspondance.group(2)
-
-
 def champ(champs, cle, contexte):
     if not champs.get(cle):
         raise ErreurContenu(f"{contexte} : champ « {cle} » manquant")
     return champs[cle]
-
-
-def lire_front_matter(lignes):
-    if not lignes or lignes[0].strip() != "---":
-        raise ErreurContenu("front-matter absent (la première ligne doit être « --- »)")
-    try:
-        fin = lignes.index("---", 1)
-    except ValueError:
-        raise ErreurContenu("front-matter non refermé (ligne « --- » manquante)") from None
-    front = {}
-    for ligne in lignes[1:fin]:
-        if ligne.strip():
-            cle, valeur = lire_champ(ligne.strip(), "front-matter")
-            front[cle] = valeur
-    return front, fin
-
-
-def ajouter_ligne(sections, brut):
-    if not sections:
-        raise ErreurContenu(f"contenu avant la première section : « {brut} »")
-    section = sections[-1]
-    entree = section.entrees[-1] if section.entrees else None
-    if entree and entree.blocs:
-        entree.blocs[-1].lignes.append(brut)
-    elif entree and brut.startswith("- "):
-        entree.puces.append(brut[2:])
-    elif entree:
-        cle, valeur = lire_champ(brut, f"{section.nom} / {entree.titre}")
-        entree.champs[cle] = valeur
-    else:
-        cle, valeur = lire_champ(brut, section.nom)
-        section.champs[cle] = valeur
-
-
-def decouper(texte):
-    lignes = texte.splitlines()
-    front, fin = lire_front_matter(lignes)
-
-    sections = []
-    for ligne in lignes[fin + 1:]:
-        brut = ligne.strip()
-        if not brut:
-            continue
-        if brut.startswith("#### "):
-            if not sections or not sections[-1].entrees:
-                raise ErreurContenu(f"bloc « {brut[5:]} » placé hors d'une entrée (###)")
-            sections[-1].entrees[-1].blocs.append(Bloc(brut[5:]))
-        elif brut.startswith("### "):
-            if not sections:
-                raise ErreurContenu(f"entrée « {brut[4:]} » placée avant toute section (##)")
-            sections[-1].entrees.append(Entree(brut[4:]))
-        elif brut.startswith("## "):
-            sections.append(Section(brut[3:]))
-        else:
-            ajouter_ligne(sections, brut)
-    return front, sections
 
 
 def liste_chips(items):
@@ -173,10 +72,10 @@ def liste_chips(items):
 def rendre_bloc(bloc, contexte):
     if not bloc.lignes:
         raise ErreurContenu(f"{contexte} : bloc « {bloc.nom} » vide")
-    puces = all(ligne.startswith("- ") for ligne in bloc.lignes)
-    if not puces and any(ligne.startswith("- ") for ligne in bloc.lignes):
+    puces = all(ligne.startswith(MARQUEUR_PUCE) for ligne in bloc.lignes)
+    if not puces and any(ligne.startswith(MARQUEUR_PUCE) for ligne in bloc.lignes):
         raise ErreurContenu(f"{contexte} : bloc « {bloc.nom} » mêle texte et puces")
-    items = [ligne[2:] for ligne in bloc.lignes] if puces else []
+    items = [ligne[len(MARQUEUR_PUCE):] for ligne in bloc.lignes] if puces else []
 
     sortie = [f"<h3>{echapper(bloc.nom)}</h3>"]
     if bloc.nom == BLOC_ENVIRONNEMENT:
