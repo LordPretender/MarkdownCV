@@ -102,7 +102,6 @@ h1 {
 .job-sub { margin: 0.15rem 0 0.9rem; font-size: 1rem; color: var(--muted); }
 
 .profil-texte {
-  max-width: 42rem;
   margin: 1rem 0 0;
   padding-left: 1rem;
   border-left: 3px solid var(--accent-soft);
@@ -110,8 +109,6 @@ h1 {
   font-style: italic;
   color: var(--muted);
 }
-
-.lead { max-width: 42rem; margin: 0; font-size: 1.1rem; color: var(--muted); }
 
 section { padding: 2.75rem 0 0; }
 

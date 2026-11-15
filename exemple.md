@@ -10,10 +10,8 @@ pied: Modèle de démonstration. Toutes les données sont fictives.
 ## Accueil
 
 Icône: home
-Titre: Bonjour, je suis Camille
 Statut: Disponible dès janvier
 Sous-titre: Applications web · Intégration de données
-Accroche: Je développe des applications web fiables et j'automatise les flux de données entre les outils d'une entreprise.
 
 ## Profil
 

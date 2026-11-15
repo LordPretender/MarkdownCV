@@ -43,14 +43,11 @@ TITRE = "Titre"
 ICONE = "Icône"
 INTRO = "Intro"
 STATUT = "Statut"
-ACCROCHE = "Accroche"
 SOUS_TITRE = "Sous-titre"
 TEXTE = "Texte"
 
-CLE_ACCUEIL_TITRE = "accueil_titre"
 CLE_ACCUEIL_STATUT = "accueil_statut"
 CLE_ACCUEIL_SOUS_TITRE = "accueil_sous_titre"
-CLE_ACCUEIL_ACCROCHE = "accueil_accroche"
 ENTREPRISE = "Entreprise"
 LIEU = "Lieu"
 PERIODE = "Période"
@@ -335,10 +332,8 @@ def preparer(front, sections, icones):
 
     valeurs = dict(front)
     accueil = par_nom[SECTION_ACCUEIL].champs
-    valeurs[CLE_ACCUEIL_TITRE] = champ(accueil, TITRE, SECTION_ACCUEIL)
     valeurs[CLE_ACCUEIL_STATUT] = champ(accueil, STATUT, SECTION_ACCUEIL)
     valeurs[CLE_ACCUEIL_SOUS_TITRE] = champ(accueil, SOUS_TITRE, SECTION_ACCUEIL)
-    valeurs[CLE_ACCUEIL_ACCROCHE] = champ(accueil, ACCROCHE, SECTION_ACCUEIL)
 
     nav = []
     for nom in SECTIONS:
