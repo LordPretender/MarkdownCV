@@ -94,14 +94,21 @@ def identifiant(nom):
     return "".join(c for c in decompose if not unicodedata.combining(c)).lower()
 
 
-def lire_champ(ligne, contexte):
+def icones_du_gabarit(chemin):
+    return set(re.findall(r'<symbol id="i-([\w-]+)"', chemin.read_text(encoding="utf-8")))
+
+
+def lire_champ(ligne, contexte, numero=0, anomalies=None):
     correspondance = RE_CHAMP.match(ligne)
     if not correspondance:
-        raise ErreurContenu(f"{contexte} : ligne non reconnue « {ligne} »")
+        if anomalies is None:
+            raise ErreurContenu(f"{contexte} : ligne non reconnue « {ligne} »")
+        anomalies.append((numero, contexte, f"ligne non reconnue « {ligne} »"))
+        return None
     return correspondance.group(1), correspondance.group(2)
 
 
-def lire_front_matter(lignes):
+def lire_front_matter(lignes, anomalies=None):
     if not lignes or lignes[0].strip() != MARQUEUR_FRONT:
         raise ErreurContenu("front-matter absent (la première ligne doit être « --- »)")
     try:
@@ -111,13 +118,14 @@ def lire_front_matter(lignes):
     front = FrontMatter()
     for numero, ligne in enumerate(lignes[1:fin], 2):
         if ligne.strip():
-            cle, valeur = lire_champ(ligne.strip(), "front-matter")
-            front[cle] = valeur
-            front.lignes_champs[cle] = numero
+            lu = lire_champ(ligne.strip(), "front-matter", numero, anomalies)
+            if lu:
+                front[lu[0]] = lu[1]
+                front.lignes_champs[lu[0]] = numero
     return front, fin
 
 
-def ajouter_ligne(sections, brut, numero):
+def ajouter_ligne(sections, brut, numero, anomalies=None):
     if not sections:
         raise ErreurContenu(f"contenu avant la première section : « {brut} »")
     section = sections[-1]
@@ -128,36 +136,48 @@ def ajouter_ligne(sections, brut, numero):
         entree.puces.append(brut[len(MARQUEUR_PUCE):])
         entree.lignes_puces.append(numero)
     elif entree:
-        cle, valeur = lire_champ(brut, f"{section.nom} / {entree.titre}")
-        entree.champs[cle] = valeur
-        entree.lignes_champs[cle] = numero
+        lu = lire_champ(brut, f"{section.nom} / {entree.titre}", numero, anomalies)
+        if lu:
+            entree.champs[lu[0]] = lu[1]
+            entree.lignes_champs[lu[0]] = numero
     else:
-        cle, valeur = lire_champ(brut, section.nom)
-        section.champs[cle] = valeur
-        section.lignes_champs[cle] = numero
+        lu = lire_champ(brut, section.nom, numero, anomalies)
+        if lu:
+            section.champs[lu[0]] = lu[1]
+            section.lignes_champs[lu[0]] = numero
 
 
-def decouper(texte):
+def decouper(texte, anomalies=None):
+    """Sans `anomalies`, la première ligne non reconnue ou le premier bloc mal placé lève ErreurContenu.
+    Avec une liste, ils y sont consignés sous forme (numéro de ligne, contexte, message) et la lecture continue."""
     lignes = texte.splitlines()
-    front, fin = lire_front_matter(lignes)
+    front, fin = lire_front_matter(lignes, anomalies)
 
     sections = []
+    bloc_orphelin = False
     for numero, ligne in enumerate(lignes[fin + 1:], fin + 2):
         brut = ligne.strip()
         if not brut:
             continue
         if brut.startswith(MARQUEUR_BLOC):
             nom = brut[len(MARQUEUR_BLOC):]
-            if not sections or not sections[-1].entrees:
-                raise ErreurContenu(f"bloc « {nom} » placé hors d'une entrée (###)")
-            sections[-1].entrees[-1].blocs.append(Bloc(nom, ligne=numero))
+            bloc_orphelin = not sections or not sections[-1].entrees
+            if bloc_orphelin:
+                message = f"bloc « {nom} » placé hors d'une entrée (###)"
+                if anomalies is None:
+                    raise ErreurContenu(message)
+                anomalies.append((numero, sections[-1].nom if sections else "", message))
+            else:
+                sections[-1].entrees[-1].blocs.append(Bloc(nom, ligne=numero))
         elif brut.startswith(MARQUEUR_ENTREE):
+            bloc_orphelin = False
             titre = brut[len(MARQUEUR_ENTREE):]
             if not sections:
                 raise ErreurContenu(f"entrée « {titre} » placée avant toute section (##)")
             sections[-1].entrees.append(Entree(titre, ligne=numero))
         elif brut.startswith(MARQUEUR_SECTION):
+            bloc_orphelin = False
             sections.append(Section(brut[len(MARQUEUR_SECTION):], ligne=numero))
-        else:
-            ajouter_ligne(sections, brut, numero)
+        elif not bloc_orphelin:
+            ajouter_ligne(sections, brut, numero, anomalies)
     return front, sections

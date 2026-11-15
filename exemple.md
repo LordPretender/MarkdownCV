@@ -4,6 +4,7 @@ titre: Analyste développeur
 description: CV en une page de Camille Martin, analyste développeur : applications web, intégration de données et automatisation.
 initiales: CM
 email: contact@example.com
+telephone: +33 (0)6 00 00 00 00
 pied: Modèle de démonstration. Toutes les données sont fictives.
 ---
 
