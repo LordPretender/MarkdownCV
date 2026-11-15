@@ -51,29 +51,17 @@ NIVEAU_AVERTISSEMENT = "AVERT."
 CONTEXTE_FRONT = "front-matter"
 LIGNE_FRONT = 1
 
-CLE_TELEPHONE = "telephone"
 CLE_EMAIL = "email"
 CLE_NOM = "nom"
 CLE_INITIALES = "initiales"
 CLE_DESCRIPTION = "description"
-CHAMPS_FRONT_REQUIS = CHAMPS_FRONT + [CLE_TELEPHONE]
-CHAMPS_FRONT_PDF = ["localisation", "permis", "mobilite", "linkedin"]
-CHAMPS_FRONT_CONNUS = CHAMPS_FRONT_REQUIS + CHAMPS_FRONT_PDF
 
 LONGUEUR_DESCRIPTION_MAX = 160
 LONGUEUR_LOGO_MAX = 3
-LONGUEUR_PROFIL_MIN = 200
-LONGUEUR_PROFIL_MAX = 700
 
 RE_EMAIL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
-RE_TELEPHONE = re.compile(r"^\+?[\d\s().-]+$")
 MOIS_OU_ANNEE = r"(?:[^\W\d_]+\.?\s)?\d{4}"
 RE_PERIODE = re.compile(rf"^{MOIS_OU_ANNEE}(?:\s–\s(?:auj\.|aujourd['’]hui|{MOIS_OU_ANNEE}))?$")
-RE_CHIFFRE = re.compile(r"\d")
-
-PARENTHESE_OUVRANTE = "("
-BLOC_MISSIONS = "Missions"
-ACRONYMES = ["N2/N3", "SaaS", "ERP", "SEPA", "PRA/PCA", "OWASP", "IA", "SGBD", "RCA"]
 
 CHAMPS_SECTION = {
     SECTION_ACCUEIL: [ICONE, STATUT, SOUS_TITRE],
@@ -126,40 +114,17 @@ def est_puce(ligne):
     return ligne.startswith(MARQUEUR_PUCE) or ligne == MARQUEUR_PUCE.strip()
 
 
-def acronymes_non_developpes(texte):
-    manquants = []
-    for acronyme in ACRONYMES:
-        motif = re.compile(rf"(?<![\w/]){re.escape(acronyme)}(?![\w/])")
-        occurrences = list(motif.finditer(texte))
-        developpe = any(
-            texte[: m.start()].rstrip().endswith(PARENTHESE_OUVRANTE)
-            or texte[m.end():].lstrip().startswith(PARENTHESE_OUVRANTE)
-            for m in occurrences
-        )
-        if occurrences and not developpe:
-            manquants.append(acronyme)
-    return manquants
-
-
 def valider_front(front):
     sortie = []
-    for cle in CHAMPS_FRONT_REQUIS:
+    for cle in CHAMPS_FRONT:
         if not front.get(cle):
             sortie.append(erreur(front.lignes_champs.get(cle, LIGNE_FRONT), CONTEXTE_FRONT, f"champ « {cle} » manquant ou vide"))
     for cle, ligne in front.lignes_champs.items():
-        if cle not in CHAMPS_FRONT_CONNUS:
+        if cle not in CHAMPS_FRONT:
             sortie.append(avertissement(ligne, CONTEXTE_FRONT, f"champ « {cle} » inconnu, ignoré par le rendu"))
-    for cle in CHAMPS_FRONT_PDF:
-        if cle not in front:
-            sortie.append(avertissement(LIGNE_FRONT, CONTEXTE_FRONT, f"champ « {cle} » absent (coordonnée du PDF)"))
     courriel = front.get(CLE_EMAIL)
     if courriel and not RE_EMAIL.match(courriel):
         sortie.append(erreur(front.lignes_champs[CLE_EMAIL], CONTEXTE_FRONT, f"« {CLE_EMAIL} » n'a pas la forme x@y.z"))
-    telephone = front.get(CLE_TELEPHONE)
-    if telephone and not RE_TELEPHONE.match(telephone):
-        sortie.append(
-            avertissement(front.lignes_champs[CLE_TELEPHONE], CONTEXTE_FRONT, f"« {CLE_TELEPHONE} » contient autre chose que chiffres, espaces, +, parenthèses, points ou tirets")
-        )
     nom, initiales = front.get(CLE_NOM), front.get(CLE_INITIALES)
     if nom and initiales and initiales_de(nom) != initiales.upper():
         sortie.append(
@@ -242,20 +207,6 @@ def valider_entree(section, entree, icones):
         sortie.append(erreur(entree.blocs[0].ligne, contexte, "blocs (####) ignorés par le rendu dans cette section"))
     for bloc in entree.blocs:
         sortie.extend(valider_bloc(bloc, contexte))
-    if nom == SECTION_EXPERIENCE:
-        sortie.extend(valider_ats_experience(entree, contexte))
-    return sortie
-
-
-def valider_ats_experience(entree, contexte):
-    sortie = []
-    if not any(bloc.nom == BLOC_MISSIONS for bloc in entree.blocs):
-        sortie.append(avertissement(entree.ligne, contexte, f"aucun bloc « {BLOC_MISSIONS} »"))
-    texte = "\n".join(ligne for bloc in entree.blocs for ligne in bloc.lignes)
-    if not RE_CHIFFRE.search(texte):
-        sortie.append(avertissement(entree.ligne, contexte, "aucun chiffre dans les blocs (réalisations chiffrées recommandées)"))
-    for acronyme in acronymes_non_developpes(texte):
-        sortie.append(avertissement(entree.ligne, contexte, f"acronyme « {acronyme} » sans forme développée"))
     return sortie
 
 
@@ -265,8 +216,6 @@ def valider_section(section, icones):
     if nom not in CHAMPS_ENTREE_REQUIS:
         if section.entrees:
             sortie.append(erreur(section.entrees[0].ligne, nom, "entrées (###) ignorées par le rendu dans cette section"))
-        if nom == SECTION_PROFIL:
-            sortie.extend(valider_profil(section))
         return sortie
     if not section.entrees:
         sortie.append(erreur(section.ligne, nom, "aucune entrée (###)"))
@@ -276,19 +225,6 @@ def valider_section(section, icones):
             sortie.append(erreur(entree.ligne, nom, f"entrée « {entree.titre} » en double (première ligne {titres[entree.titre]})"))
         titres.setdefault(entree.titre, entree.ligne)
         sortie.extend(valider_entree(section, entree, icones))
-    return sortie
-
-
-def valider_profil(section):
-    texte = section.champs.get(TEXTE)
-    if not texte:
-        return []
-    ligne = section.lignes_champs[TEXTE]
-    sortie = []
-    if not LONGUEUR_PROFIL_MIN <= len(texte) <= LONGUEUR_PROFIL_MAX:
-        sortie.append(avertissement(ligne, SECTION_PROFIL, f"« {TEXTE} » de {len(texte)} caractères (attendu de {LONGUEUR_PROFIL_MIN} à {LONGUEUR_PROFIL_MAX})"))
-    for acronyme in acronymes_non_developpes(texte):
-        sortie.append(avertissement(ligne, SECTION_PROFIL, f"acronyme « {acronyme} » sans forme développée"))
     return sortie
 
 

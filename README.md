@@ -6,7 +6,7 @@ Modèle de CV en une page, statique, sans framework ni dépendance. Les données
 
 - Créer un fichier markdown de données sur le modèle d'`exemple.md` (fictif, il montre la structure attendue), où l'on veut
 - Lancer `py -3 scripts/construire_cv.py --source <chemin du fichier>` pour générer `build/` (options `--source` et `--destination`, voir `scripts/README.md`)
-- Le fichier est validé avant la génération : une erreur (section ou champ manquant, icône inconnue, URL invalide, `email` ou `telephone` absent…) bloque le build avec son numéro de ligne, les avertissements s'affichent sans bloquer ; `py -3 scripts/valider_cv.py --source <chemin du fichier>` lance la validation seule
+- Le fichier est validé avant la génération : une erreur (section ou champ manquant, icône inconnue, URL invalide, `email` absent…) bloque le build avec son numéro de ligne, les avertissements s'affichent sans bloquer ; `py -3 scripts/valider_cv.py --source <chemin du fichier>` lance la validation seule
 - Ouvrir `build/index.html` dans un navigateur
 - Adapter les couleurs dans les variables `:root` de `src/style.css`
 

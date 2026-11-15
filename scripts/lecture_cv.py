@@ -95,13 +95,9 @@ class Section:
     lignes_champs: dict = field(default_factory=dict)
 
 
-def sans_accents(texte):
-    decompose = unicodedata.normalize("NFD", texte)
-    return "".join(c for c in decompose if not unicodedata.combining(c))
-
-
 def identifiant(nom):
-    return sans_accents(nom).lower()
+    decompose = unicodedata.normalize("NFD", nom)
+    return "".join(c for c in decompose if not unicodedata.combining(c)).lower()
 
 
 def icones_du_gabarit(chemin):
