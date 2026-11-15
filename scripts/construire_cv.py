@@ -20,6 +20,7 @@ FRAGMENT_NAV = "nav"
 FRAGMENT_DETAILS = "details"
 
 SECTION_ACCUEIL = "Accueil"
+SECTION_PROFIL = "Profil"
 SECTION_EXPERIENCE = "Expérience"
 SECTION_COMPETENCES = "Compétences"
 SECTION_PROJETS = "Projets"
@@ -28,6 +29,7 @@ SECTION_LANGUES = "Langues"
 SECTION_LIENS = "Liens"
 SECTIONS = [
     SECTION_ACCUEIL,
+    SECTION_PROFIL,
     SECTION_EXPERIENCE,
     SECTION_COMPETENCES,
     SECTION_PROJETS,
@@ -42,6 +44,13 @@ ICONE = "Icône"
 INTRO = "Intro"
 STATUT = "Statut"
 ACCROCHE = "Accroche"
+SOUS_TITRE = "Sous-titre"
+TEXTE = "Texte"
+
+CLE_ACCUEIL_TITRE = "accueil_titre"
+CLE_ACCUEIL_STATUT = "accueil_statut"
+CLE_ACCUEIL_SOUS_TITRE = "accueil_sous_titre"
+CLE_ACCUEIL_ACCROCHE = "accueil_accroche"
 ENTREPRISE = "Entreprise"
 LIEU = "Lieu"
 PERIODE = "Période"
@@ -326,9 +335,10 @@ def preparer(front, sections, icones):
 
     valeurs = dict(front)
     accueil = par_nom[SECTION_ACCUEIL].champs
-    valeurs["accueil_titre"] = champ(accueil, TITRE, SECTION_ACCUEIL)
-    valeurs["accueil_statut"] = champ(accueil, STATUT, SECTION_ACCUEIL)
-    valeurs["accueil_accroche"] = champ(accueil, ACCROCHE, SECTION_ACCUEIL)
+    valeurs[CLE_ACCUEIL_TITRE] = champ(accueil, TITRE, SECTION_ACCUEIL)
+    valeurs[CLE_ACCUEIL_STATUT] = champ(accueil, STATUT, SECTION_ACCUEIL)
+    valeurs[CLE_ACCUEIL_SOUS_TITRE] = champ(accueil, SOUS_TITRE, SECTION_ACCUEIL)
+    valeurs[CLE_ACCUEIL_ACCROCHE] = champ(accueil, ACCROCHE, SECTION_ACCUEIL)
 
     nav = []
     for nom in SECTIONS:
@@ -340,10 +350,13 @@ def preparer(front, sections, icones):
         )
         if nom == SECTION_ACCUEIL:
             continue
-        if not section.entrees:
-            raise ErreurContenu(f"section « {nom} » sans aucune entrée (###)")
         valeurs[f"{identifiant(nom)}_icone"] = icone
         valeurs[f"{identifiant(nom)}_titre"] = champ(section.champs, TITRE, nom)
+        if nom == SECTION_PROFIL:
+            valeurs[f"{identifiant(nom)}_texte"] = champ(section.champs, TEXTE, nom)
+            continue
+        if not section.entrees:
+            raise ErreurContenu(f"section « {nom} » sans aucune entrée (###)")
         if nom != SECTION_LIENS:
             valeurs[f"{identifiant(nom)}_intro"] = champ(section.champs, INTRO, nom)
 

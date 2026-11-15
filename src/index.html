@@ -22,7 +22,8 @@
   <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="3" y1="12" x2="21" y2="12"/><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18z"/></symbol>
   <symbol id="i-briefcase" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
-  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7"/><path d="M18 14a6.5 6.5 0 0 1 3.5 6"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+  <symbol id="i-users"viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7"/><path d="M18 14a6.5 6.5 0 0 1 3.5 6"/></symbol>
   <symbol id="i-arrow" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="8 7 17 7 17 16"/></symbol>
   <symbol id="i-close" viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></symbol>
   <symbol id="i-cap" viewBox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5"/></symbol>
@@ -45,11 +46,18 @@
       <h1>{{accueil_titre}}</h1>
       <span class="status"><span class="dot" aria-hidden="true"></span>{{accueil_statut}}</span>
     </div>
+    <p class="job-title">{{titre}}</p>
+    <p class="job-sub">{{accueil_sous_titre}}</p>
     <p class="lead">{{accueil_accroche}}</p>
   </div>
 </header>
 
 <main class="container">
+  <section id="profil">
+    <h2><svg class="ico"><use href="#i-{{profil_icone}}"/></svg>{{profil_titre}}</h2>
+    <p class="profil-texte">{{profil_texte}}</p>
+  </section>
+
   <section id="experience">
     <h2><svg class="ico"><use href="#i-{{experience_icone}}"/></svg>{{experience_titre}}</h2>
     <p class="intro">{{experience_intro}}</p>

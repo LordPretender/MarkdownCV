@@ -12,7 +12,14 @@ pied: Modèle de démonstration. Toutes les données sont fictives.
 Icône: home
 Titre: Bonjour, je suis Camille
 Statut: Disponible dès janvier
+Sous-titre: Applications web · Intégration de données
 Accroche: Je développe des applications web fiables et j'automatise les flux de données entre les outils d'une entreprise.
+
+## Profil
+
+Icône: user
+Titre: Profil
+Texte: Analyste développeur attachée à la fiabilité des applications métiers. Au-delà du développement, je m'investis dans l'analyse des incidents et l'amélioration continue du code. Mon objectif : rejoindre une équipe qui conçoit des solutions durables.
 
 ## Expérience
 
