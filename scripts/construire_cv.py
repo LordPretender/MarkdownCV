@@ -12,6 +12,7 @@ from pathlib import Path
 RACINE = Path(__file__).resolve().parent.parent
 DOSSIER_GABARIT = "src"
 FICHIER_GABARIT = "index.html"
+FICHIER_FAVICON = "favicon.svg"
 DOSSIER_BUILD = "build"
 PREFIXE_DETAIL_EXPERIENCE = "d-"
 PREFIXE_DETAIL_PROJET = "p-"
@@ -385,6 +386,11 @@ def appliquer(gabarit, valeurs, fragments):
     return texte
 
 
+def rendre_gabarit(gabarit, destination, valeurs, fragments):
+    texte = appliquer(gabarit.read_text(encoding="utf-8"), valeurs, fragments)
+    destination.write_bytes(texte.encode("utf-8"))
+
+
 def construire(source, destination):
     dossier_gabarit = RACINE / DOSSIER_GABARIT
     gabarit = (dossier_gabarit / FICHIER_GABARIT).read_text(encoding="utf-8")
@@ -392,12 +398,12 @@ def construire(source, destination):
 
     front, sections = decouper(source.read_text(encoding="utf-8"))
     valeurs, fragments = preparer(front, sections, icones)
-    page = appliquer(gabarit, valeurs, fragments)
 
     destination.mkdir(parents=True, exist_ok=True)
-    (destination / FICHIER_GABARIT).write_bytes(page.encode("utf-8"))
+    rendre_gabarit(dossier_gabarit / FICHIER_GABARIT, destination / FICHIER_GABARIT, valeurs, fragments)
+    rendre_gabarit(dossier_gabarit / FICHIER_FAVICON, destination / FICHIER_FAVICON, valeurs, {})
     for fichier in dossier_gabarit.iterdir():
-        if fichier.is_file() and fichier.name != FICHIER_GABARIT:
+        if fichier.is_file() and fichier.name not in (FICHIER_GABARIT, FICHIER_FAVICON):
             shutil.copy2(fichier, destination / fichier.name)
 
 
