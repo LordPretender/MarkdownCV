@@ -5,6 +5,10 @@ description: CV en une page de Camille Martin, analyste développeur : applicati
 initiales: CM
 email: contact@example.com
 telephone: +33 (0)6 00 00 00 00
+localisation: Lyon (69000)
+permis: Permis B
+mobilite: Rhône
+linkedin: example.com/in/camille-martin
 pied: Modèle de démonstration. Toutes les données sont fictives.
 ---
 

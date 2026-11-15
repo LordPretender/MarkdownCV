@@ -44,6 +44,7 @@ from lecture_cv import (
     decouper,
     icones_du_gabarit,
     identifiant,
+    retirer_puce,
 )
 from valider_cv import NIVEAU_ERREUR, compter, valider
 
@@ -51,6 +52,8 @@ FICHIER_FAVICON = "favicon.svg"
 DOSSIER_BUILD = "build"
 PREFIXE_DETAIL_EXPERIENCE = "d-"
 PREFIXE_DETAIL_PROJET = "p-"
+MODULE_PDF = "reportlab"
+MESSAGE_PDF_ABSENT = "PDF non généré : pip install -r requirements.txt"
 FRAGMENT_NAV = "nav"
 FRAGMENT_DETAILS = "details"
 
@@ -78,7 +81,7 @@ def rendre_bloc(bloc, contexte):
     puces = all(ligne.startswith(MARQUEUR_PUCE) for ligne in bloc.lignes)
     if not puces and any(ligne.startswith(MARQUEUR_PUCE) for ligne in bloc.lignes):
         raise ErreurContenu(f"{contexte} : bloc « {bloc.nom} » mêle texte et puces")
-    items = [ligne[len(MARQUEUR_PUCE):] for ligne in bloc.lignes] if puces else []
+    items = [retirer_puce(ligne) for ligne in bloc.lignes] if puces else []
 
     sortie = [f"<h3>{echapper(bloc.nom)}</h3>"]
     if bloc.nom == BLOC_ENVIRONNEMENT:
@@ -322,19 +325,34 @@ def construire(source, destination):
     for fichier in dossier_gabarit.iterdir():
         if fichier.is_file() and fichier.name not in (FICHIER_GABARIT, FICHIER_FAVICON):
             shutil.copy2(fichier, destination / fichier.name)
+    return front, sections
+
+
+def construire_pdf_cv(front, sections, destination):
+    try:
+        # import paresseux : reportlab reste une dépendance optionnelle, absente tant que --pdf n'est pas demandé
+        from pdf_cv import construire_pdf
+    except ModuleNotFoundError as erreur:
+        if erreur.name != MODULE_PDF:
+            raise
+        raise ErreurContenu(MESSAGE_PDF_ABSENT) from erreur
+    return construire_pdf(front, indexer_sections(sections), destination)
 
 
 def main():
     analyseur = argparse.ArgumentParser(description=__doc__)
     analyseur.add_argument("--source", type=Path, required=True, help="fichier markdown des données")
     analyseur.add_argument("--destination", type=Path, default=RACINE / DOSSIER_BUILD, help="dossier de sortie")
+    analyseur.add_argument("--pdf", action="store_true", help="génère aussi le PDF optimisé ATS (nécessite reportlab)")
     arguments = analyseur.parse_args()
     try:
-        construire(arguments.source, arguments.destination)
+        front, sections = construire(arguments.source, arguments.destination)
+        print(f"Site généré dans {arguments.destination}")
+        if arguments.pdf:
+            print(f"PDF généré : {construire_pdf_cv(front, sections, arguments.destination)}")
     except (ErreurContenu, OSError) as erreur:
         print(f"Erreur : {erreur}", file=sys.stderr)
         return 1
-    print(f"Site généré dans {arguments.destination}")
     return 0
 
 

@@ -95,13 +95,21 @@ class Section:
     lignes_champs: dict = field(default_factory=dict)
 
 
+def sans_accents(texte):
+    decompose = unicodedata.normalize("NFD", texte)
+    return "".join(c for c in decompose if not unicodedata.combining(c))
+
+
 def identifiant(nom):
-    decompose = unicodedata.normalize("NFD", nom)
-    return "".join(c for c in decompose if not unicodedata.combining(c)).lower()
+    return sans_accents(nom).lower()
 
 
 def icones_du_gabarit(chemin):
     return set(re.findall(r'<symbol id="i-([\w-]+)"', chemin.read_text(encoding="utf-8")))
+
+
+def retirer_puce(ligne):
+    return ligne[len(MARQUEUR_PUCE):]
 
 
 def signaler(anomalies, numero, contexte, message):
@@ -143,7 +151,7 @@ def ajouter_ligne(sections, brut, numero, anomalies=None):
     if entree and entree.blocs:
         entree.blocs[-1].lignes.append(brut)
     elif entree and brut.startswith(MARQUEUR_PUCE):
-        entree.puces.append(brut[len(MARQUEUR_PUCE):])
+        entree.puces.append(retirer_puce(brut))
         entree.lignes_puces.append(numero)
     elif entree:
         lu = lire_champ(brut, f"{section.nom} / {entree.titre}", numero, anomalies)
