@@ -187,6 +187,31 @@ Petit utilitaire en ligne de commande qui produit des rapports mensuels à parti
 
 Le goût de l'automatisation et le soin apporté à la documentation.
 
+## Stages
+
+Icône: user
+Titre: Stages
+Intro: Mes premières missions de développement. Cliquez sur une carte pour afficher le détail.
+
+### Stagiaire développeuse web
+
+Entreprise: Atelier Pixel
+Lieu: Grenoble
+Période: Avr. 2018 – Août 2018
+Logo: AP
+
+#### Missions
+
+- Développement de pages web dynamiques en PHP et JavaScript
+- Correction d'anomalies signalées par les utilisateurs
+- Rédaction de la documentation technique du module réalisé
+
+#### Environnement
+
+- PHP
+- JavaScript
+- MySQL
+
 ## Diplômes
 
 Icône: cap

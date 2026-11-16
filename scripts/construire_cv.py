@@ -33,6 +33,7 @@ from lecture_cv import (
     SECTION_LIENS,
     SECTION_PROFIL,
     SECTION_PROJETS,
+    SECTION_STAGES,
     SECTIONS,
     SOUS_TITRE,
     STATUT,
@@ -52,6 +53,7 @@ FICHIER_FAVICON = "favicon.svg"
 DOSSIER_BUILD = "build"
 PREFIXE_DETAIL_EXPERIENCE = "d-"
 PREFIXE_DETAIL_PROJET = "p-"
+PREFIXE_DETAIL_STAGE = "s-"
 FRAGMENT_NAV = "nav"
 FRAGMENT_DETAILS = "details"
 
@@ -117,14 +119,14 @@ def rendre_carte_detail(id_detail, logo, titre, sous_titre, chips):
     ]
 
 
-def rendre_experience(section):
+def rendre_postes(section, nom_section, prefixe):
     cartes, details = [], []
     for rang, entree in enumerate(section.entrees, 1):
-        contexte = f"{SECTION_EXPERIENCE} / {entree.titre}"
+        contexte = f"{nom_section} / {entree.titre}"
         c = entree.champs
         entreprise, lieu = champ(c, ENTREPRISE, contexte), champ(c, LIEU, contexte)
         periode, logo = champ(c, PERIODE, contexte), champ(c, LOGO, contexte)
-        id_detail = f"{PREFIXE_DETAIL_EXPERIENCE}{rang}"
+        id_detail = f"{prefixe}{rang}"
         cartes += rendre_carte_detail(id_detail, logo, entree.titre, entreprise, [periode, lieu])
         details += rendre_detail(
             id_detail, entree.titre, f"{entreprise} · {lieu} · {periode}", logo, entree, contexte
@@ -228,16 +230,8 @@ def indexer_sections(sections):
     return par_nom
 
 
-def preparer(front, sections, icones):
-    for cle in CHAMPS_FRONT:
-        champ(front, cle, "front-matter")
-    par_nom = indexer_sections(sections)
-
-    valeurs = dict(front)
-    accueil = par_nom[SECTION_ACCUEIL].champs
-    valeurs[CLE_ACCUEIL_STATUT] = champ(accueil, STATUT, SECTION_ACCUEIL)
-    valeurs[CLE_ACCUEIL_SOUS_TITRE] = champ(accueil, SOUS_TITRE, SECTION_ACCUEIL)
-
+def preparer_navigation(par_nom, icones, valeurs):
+    """Renseigne `valeurs` (icône, titre, intro, texte de chaque section) et rend les liens de navigation."""
     nav = []
     for nom in SECTIONS:
         section = par_nom[nom]
@@ -257,18 +251,35 @@ def preparer(front, sections, icones):
             raise ErreurContenu(f"section « {nom} » sans aucune entrée (###)")
         if nom != SECTION_LIENS:
             valeurs[f"{identifiant(nom)}_intro"] = champ(section.champs, INTRO, nom)
+    return nav
 
-    cartes_experience, details_experience = rendre_experience(par_nom[SECTION_EXPERIENCE])
+
+def preparer(front, sections, icones):
+    for cle in CHAMPS_FRONT:
+        champ(front, cle, "front-matter")
+    par_nom = indexer_sections(sections)
+
+    valeurs = dict(front)
+    accueil = par_nom[SECTION_ACCUEIL].champs
+    valeurs[CLE_ACCUEIL_STATUT] = champ(accueil, STATUT, SECTION_ACCUEIL)
+    valeurs[CLE_ACCUEIL_SOUS_TITRE] = champ(accueil, SOUS_TITRE, SECTION_ACCUEIL)
+    nav = preparer_navigation(par_nom, icones, valeurs)
+
+    cartes_experience, details_experience = rendre_postes(
+        par_nom[SECTION_EXPERIENCE], SECTION_EXPERIENCE, PREFIXE_DETAIL_EXPERIENCE
+    )
     cartes_projets, details_projets = rendre_projets(par_nom[SECTION_PROJETS])
+    cartes_stages, details_stages = rendre_postes(par_nom[SECTION_STAGES], SECTION_STAGES, PREFIXE_DETAIL_STAGE)
     fragments = {
         FRAGMENT_NAV: nav,
         identifiant(SECTION_EXPERIENCE): cartes_experience,
         identifiant(SECTION_COMPETENCES): rendre_competences(par_nom[SECTION_COMPETENCES], icones),
         identifiant(SECTION_PROJETS): cartes_projets,
+        identifiant(SECTION_STAGES): cartes_stages,
         identifiant(SECTION_DIPLOMES): rendre_diplomes(par_nom[SECTION_DIPLOMES]),
         identifiant(SECTION_LANGUES): rendre_langues(par_nom[SECTION_LANGUES]),
         identifiant(SECTION_LIENS): rendre_liens(par_nom[SECTION_LIENS]),
-        FRAGMENT_DETAILS: details_experience + details_projets,
+        FRAGMENT_DETAILS: details_experience + details_projets + details_stages,
     }
     return valeurs, fragments
 
@@ -332,7 +343,7 @@ def main():
     arguments = analyseur.parse_args()
     try:
         construire(arguments.source, arguments.destination)
-    except (ErreurContenu, OSError) as erreur:
+    except (ErreurContenu, OSError, ValueError) as erreur:
         print(f"Erreur : {erreur}", file=sys.stderr)
         return 1
     print(f"Site généré dans {arguments.destination}")
