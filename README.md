@@ -6,7 +6,7 @@ Modèle de CV en une page, statique, sans framework ni dépendance. Les données
 
 - Créer un fichier markdown de données sur le modèle d'`exemple.md` (fictif, il montre la structure attendue), où l'on veut
 - La page s'ouvre sur un hero (nom et titre de poste du front-matter, puis le champ `Sous-titre` de `## Accueil`), suivi d'une section `Profil` (champ `Texte`) placée entre Accueil et Expérience ; le format exact est dans `exemple.md`
-- Les stages ont leur propre section `Stages` (cartes cliquables comme l'Expérience), placée entre Projets et Diplômes ; le format est dans `exemple.md`
+- Les stages ont leur propre section `Stages` (cartes cliquables quand elles ont du détail), placée entre Projets et Diplômes ; le format est dans `exemple.md`
 - Lancer `py -3 scripts/construire_cv.py --source <chemin du fichier>` pour générer `build/` (options `--source` et `--destination`, voir `scripts/README.md`)
 - Le fichier est validé avant la génération : une erreur (section ou champ manquant, icône inconnue, URL invalide, `email` absent…) bloque le build avec son numéro de ligne, les avertissements s'affichent sans bloquer ; `py -3 scripts/valider_cv.py --source <chemin du fichier>` lance la validation seule
 - Ouvrir `build/index.html` dans un navigateur

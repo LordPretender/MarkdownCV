@@ -107,16 +107,22 @@ def rendre_detail(id_detail, titre, sous_titre, logo, entree, contexte):
     return lignes
 
 
-def rendre_carte_detail(id_detail, logo, titre, sous_titre, chips):
+def a_detail(entree):
+    """Une carte n'ouvre un volet de détail que si l'entrée porte au moins un bloc."""
+    return bool(entree.blocs)
+
+
+def rendre_carte(id_detail, logo, titre, sous_titre, chips, cliquable):
     pastilles = "".join(f'<span class="chip">{echapper(c)}</span>' for c in chips)
-    return [
-        f'<li><button class="card" type="button" data-detail="{id_detail}">',
+    corps = [
         f'  <span class="logo">{echapper(logo)}</span>',
         f'  <span class="card-body"><span class="card-title">{echapper(titre)}</span>'
         f'<span class="card-sub">{echapper(sous_titre)}</span></span>',
         f'  <span class="chips">{pastilles}</span>',
-        "</button></li>",
     ]
+    if not cliquable:
+        return ['<li class="card static">', *corps, "</li>"]
+    return [f'<li><button class="card" type="button" data-detail="{id_detail}">', *corps, "</button></li>"]
 
 
 def rendre_postes(section, nom_section, prefixe):
@@ -127,10 +133,12 @@ def rendre_postes(section, nom_section, prefixe):
         entreprise, lieu = champ(c, ENTREPRISE, contexte), champ(c, LIEU, contexte)
         periode, logo = champ(c, PERIODE, contexte), champ(c, LOGO, contexte)
         id_detail = f"{prefixe}{rang}"
-        cartes += rendre_carte_detail(id_detail, logo, entree.titre, entreprise, [periode, lieu])
-        details += rendre_detail(
-            id_detail, entree.titre, f"{entreprise} · {lieu} · {periode}", logo, entree, contexte
-        )
+        cliquable = a_detail(entree)
+        cartes += rendre_carte(id_detail, logo, entree.titre, entreprise, [periode, lieu], cliquable)
+        if cliquable:
+            details += rendre_detail(
+                id_detail, entree.titre, f"{entreprise} · {lieu} · {periode}", logo, entree, contexte
+            )
     return cartes, details
 
 
@@ -142,15 +150,17 @@ def rendre_projets(section):
         contexte_projet, periode = champ(c, CONTEXTE, contexte), champ(c, PERIODE, contexte)
         logo = champ(c, LOGO, contexte)
         id_detail = f"{PREFIXE_DETAIL_PROJET}{rang}"
-        cartes += rendre_carte_detail(id_detail, logo, entree.titre, contexte_projet, [periode])
-        details += rendre_detail(
-            id_detail,
-            c.get(TITRE_DETAIL) or entree.titre,
-            f"{contexte_projet} · {c.get(PERIODE_DETAIL) or periode}",
-            logo,
-            entree,
-            contexte,
-        )
+        cliquable = a_detail(entree)
+        cartes += rendre_carte(id_detail, logo, entree.titre, contexte_projet, [periode], cliquable)
+        if cliquable:
+            details += rendre_detail(
+                id_detail,
+                c.get(TITRE_DETAIL) or entree.titre,
+                f"{contexte_projet} · {c.get(PERIODE_DETAIL) or periode}",
+                logo,
+                entree,
+                contexte,
+            )
     return cartes, details
 
 
