@@ -244,6 +244,25 @@ Niveau: Natif
 
 Niveau: Courant
 
+## Intérêts
+
+Icône: heart
+Titre: Centres d'intérêt
+Intro: Ce qui me passionne en dehors de mes missions.
+
+### Culture
+
+Icône: globe
+
+- Lecture
+- Cinéma
+
+### Sport
+
+Icône: user
+
+- Course à pied
+
 ## Liens
 
 Icône: link

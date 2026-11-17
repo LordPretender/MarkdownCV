@@ -32,6 +32,7 @@
   <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></symbol>
   <symbol id="i-layers" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></symbol>
   <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21.2l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.8z"/></symbol>
 </svg>
 
 <nav class="nav" aria-label="Navigation principale">
@@ -102,6 +103,14 @@
     <p class="intro">{{langues_intro}}</p>
     <ul class="lang-list">
       <!-- @langues -->
+    </ul>
+  </section>
+
+  <section id="interets">
+    <h2><svg class="ico"><use href="#i-{{interets_icone}}"/></svg>{{interets_titre}}</h2>
+    <p class="intro">{{interets_intro}}</p>
+    <ul class="skill-list">
+      <!-- @interets -->
     </ul>
   </section>
 
