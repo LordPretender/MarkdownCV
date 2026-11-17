@@ -72,6 +72,11 @@ def champ(champs, cle, contexte):
     return champs[cle]
 
 
+def attributs_lien_externe():
+    """Point unique : tout lien externe du site s'ouvre dans un nouvel onglet (noopener contre l'accès à window.opener)."""
+    return ' target="_blank" rel="noopener noreferrer"'
+
+
 def liste_chips(items):
     return '<ul class="chips">' + "".join(f'<li class="chip">{echapper(i)}</li>' for i in items) + "</ul>"
 
@@ -213,7 +218,7 @@ def rendre_liens(section):
         if not url.startswith(PREFIXES_URL):
             raise ErreurContenu(f"{contexte} : « {URL} » doit commencer par http:// ou https://")
         lignes.append(
-            f'<li><a class="card" href="{echapper(url)}">'
+            f'<li><a class="card" href="{echapper(url)}"{attributs_lien_externe()}>'
             f'<span class="logo dark">{echapper(champ(entree.champs, LOGO, contexte))}</span>'
             f'<span class="card-title">{echapper(entree.titre)}</span>'
             f'<svg class="arrow"><use href="#i-arrow"/></svg></a></li>'
