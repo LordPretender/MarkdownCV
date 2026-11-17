@@ -8,6 +8,8 @@ Modèle de CV en une page, statique, sans framework ni dépendance. Les données
 - La page s'ouvre sur un hero (nom et titre de poste du front-matter, puis le champ `Sous-titre` de `## Accueil`), suivi d'une section `Profil` (champ `Texte`) placée entre Accueil et Expérience ; le format exact est dans `exemple.md`
 - Les stages ont leur propre section `Stages` (cartes cliquables quand elles ont du détail), placée entre Projets et Diplômes ; le format est dans `exemple.md`
 - Les centres d'intérêt ont leur propre section `Intérêts` (pastilles groupées comme les compétences), placée entre Langues et Liens ; le format est dans `exemple.md`
+- Le front-matter porte `url` (adresse publique du site, obligatoire : canonical, Open Graph, JSON-LD, `robots.txt` et `sitemap.xml` en dépendent) et `image` (optionnel) ; le format est dans `exemple.md`
+- `image` : visuel de partage en PNG de 1200x630 px, rangé à côté du fichier de données (pas dans le dépôt, c'est une donnée personnelle), sans photo conseillée ; le build le copie à la racine du site. Sans `image`, aucune balise d'image n'est émise et le validateur avertit
 - Lancer `py -3 scripts/construire_cv.py --source <chemin du fichier>` pour générer `build/` (options `--source` et `--destination`, voir `scripts/README.md`)
 - Le fichier est validé avant la génération : une erreur (section ou champ manquant, icône inconnue, URL invalide, `email` absent…) bloque le build avec son numéro de ligne, les avertissements s'affichent sans bloquer ; `py -3 scripts/valider_cv.py --source <chemin du fichier>` lance la validation seule
 - Ouvrir `build/index.html` dans un navigateur
@@ -16,7 +18,7 @@ Modèle de CV en une page, statique, sans framework ni dépendance. Les données
 ## Structure
 
 - `exemple.md` : modèle fictif dont le fichier de données reprend le format
-- `src/` : gabarit `index.html` (contenu de la page et script du tiroir de détail), `favicon.svg` (gabarit du favicon, rendu avec les initiales du CV) et `style.css` (mise en page, thèmes clair et sombre, responsive), sans aucune donnée
+- `src/` : gabarit `index.html` (contenu de la page et script du tiroir de détail), `favicon.svg` (gabarit du favicon, rendu avec les initiales du CV) et `style.css` (mise en page, thèmes clair et sombre, responsive), et les gabarits `robots.txt` et `sitemap.xml`, sans aucune donnée
 - `scripts/` : build, validation et lecture du fichier de données, voir `scripts/README.md`
 - `build/` : site généré, à ne pas éditer à la main ; non versionné (ignoré par git), à régénérer après un clone
 
