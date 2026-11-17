@@ -2,6 +2,7 @@
 
 import argparse
 import re
+import struct
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -9,6 +10,12 @@ from pathlib import Path
 from lecture_cv import (
     BLOC_ENVIRONNEMENT,
     CHAMPS_FRONT,
+    CHAMPS_FRONT_OPTIONNELS,
+    CLE_DESCRIPTION,
+    CLE_IMAGE,
+    CLE_NOM,
+    CLE_TITRE,
+    CLE_URL,
     CONTEXTE,
     ENTREPRISE,
     ETABLISSEMENT,
@@ -44,6 +51,7 @@ from lecture_cv import (
     ErreurContenu,
     decouper,
     icones_du_gabarit,
+    titre_de_page,
 )
 
 GABARIT = RACINE / DOSSIER_GABARIT / FICHIER_GABARIT
@@ -54,10 +62,23 @@ CONTEXTE_FRONT = "front-matter"
 LIGNE_FRONT = 1
 
 CLE_EMAIL = "email"
-CLE_NOM = "nom"
 CLE_INITIALES = "initiales"
-CLE_DESCRIPTION = "description"
 
+PREFIXE_HTTPS = "https://"
+CARACTERES_URL_INTERDITS = (" ", '"', "<", ">")
+SEPARATEURS_CHEMIN = ("/", "\\")
+EXTENSIONS_IMAGE = (".png", ".jpg", ".jpeg")
+EXTENSION_PNG = ".png"
+FICHIERS_RESERVES = ("index.html", "style.css", "favicon.svg", "robots.txt", "sitemap.xml")
+SIGNATURE_PNG = b"\x89PNG\r\n\x1a\n"
+TAILLE_ENTETE_PNG = 24
+DECALAGE_DIMENSIONS_PNG = 16
+FORMAT_DIMENSIONS_PNG = ">II"
+MODE_LECTURE_BINAIRE = "rb"
+DIMENSIONS_IMAGE = (1200, 630)
+
+LONGUEUR_TITRE_MAX = 60
+LONGUEUR_DESCRIPTION_MIN = 50
 LONGUEUR_DESCRIPTION_MAX = 160
 LONGUEUR_LOGO_MAX = 3
 
@@ -121,13 +142,52 @@ def est_puce(ligne):
     return ligne.startswith(MARQUEUR_PUCE) or ligne == MARQUEUR_PUCE.strip()
 
 
-def valider_front(front):
+def valider_url(front):
+    url = front.get(CLE_URL)
+    if not url:
+        return []
+    ligne = front.lignes_champs[CLE_URL]
     sortie = []
+    if not url.startswith(PREFIXE_HTTPS):
+        sortie.append(erreur(ligne, CONTEXTE_FRONT, f"« {CLE_URL} » doit commencer par {PREFIXE_HTTPS}"))
+    if any(caractere in url for caractere in CARACTERES_URL_INTERDITS):
+        sortie.append(erreur(ligne, CONTEXTE_FRONT, f"« {CLE_URL} » contient un espace, un guillemet, « < » ou « > »"))
+    return sortie
+
+
+def valider_image(front, dossier_source):
+    image = front.get(CLE_IMAGE)
+    if not image:
+        return [avertissement(LIGNE_FRONT, CONTEXTE_FRONT, "aucune image de partage : les aperçus LinkedIn et Slack seront sans visuel")]
+    ligne = front.lignes_champs[CLE_IMAGE]
+    if any(separateur in image for separateur in SEPARATEURS_CHEMIN):
+        return [erreur(ligne, CONTEXTE_FRONT, f"« {CLE_IMAGE} » doit être un nom de fichier placé à côté du CV source, sans sous-dossier")]
+    if not image.lower().endswith(EXTENSIONS_IMAGE):
+        return [erreur(ligne, CONTEXTE_FRONT, f"« {CLE_IMAGE} » doit être un fichier .png, .jpg ou .jpeg")]
+    if image in FICHIERS_RESERVES:
+        return [erreur(ligne, CONTEXTE_FRONT, f"« {CLE_IMAGE} » porte le nom d'un fichier du gabarit ({image}) que la copie écraserait")]
+    chemin = dossier_source / image
+    if not chemin.is_file():
+        return [erreur(ligne, CONTEXTE_FRONT, f"« {CLE_IMAGE} » : fichier introuvable ({chemin})")]
+    if not image.lower().endswith(EXTENSION_PNG):
+        return []
+    with chemin.open(MODE_LECTURE_BINAIRE) as fichier:
+        entete = fichier.read(TAILLE_ENTETE_PNG)
+    if len(entete) < TAILLE_ENTETE_PNG or not entete.startswith(SIGNATURE_PNG):
+        return [erreur(ligne, CONTEXTE_FRONT, f"« {CLE_IMAGE} » n'est pas un PNG valide")]
+    dimensions = struct.unpack(FORMAT_DIMENSIONS_PNG, entete[DECALAGE_DIMENSIONS_PNG:TAILLE_ENTETE_PNG])
+    if dimensions != DIMENSIONS_IMAGE:
+        return [avertissement(ligne, CONTEXTE_FRONT, f"« {CLE_IMAGE} » de {dimensions[0]}x{dimensions[1]} px (attendu {DIMENSIONS_IMAGE[0]}x{DIMENSIONS_IMAGE[1]})")]
+    return []
+
+
+def valider_front(front, dossier_source):
+    sortie = valider_url(front) + valider_image(front, dossier_source)
     for cle in CHAMPS_FRONT:
         if not front.get(cle):
             sortie.append(erreur(front.lignes_champs.get(cle, LIGNE_FRONT), CONTEXTE_FRONT, f"champ « {cle} » manquant ou vide"))
     for cle, ligne in front.lignes_champs.items():
-        if cle not in CHAMPS_FRONT:
+        if cle not in CHAMPS_FRONT + CHAMPS_FRONT_OPTIONNELS:
             sortie.append(avertissement(ligne, CONTEXTE_FRONT, f"champ « {cle} » inconnu, ignoré par le rendu"))
     courriel = front.get(CLE_EMAIL)
     if courriel and not RE_EMAIL.match(courriel):
@@ -137,10 +197,18 @@ def valider_front(front):
         sortie.append(
             avertissement(front.lignes_champs[CLE_INITIALES], CONTEXTE_FRONT, f"« {CLE_INITIALES} » ({initiales}) différent des initiales de « {CLE_NOM} » ({initiales_de(nom)})")
         )
+    if nom and front.get(CLE_TITRE):
+        titre_page = titre_de_page(nom, front[CLE_TITRE])
+        if len(titre_page) > LONGUEUR_TITRE_MAX:
+            sortie.append(avertissement(LIGNE_FRONT, CONTEXTE_FRONT, f"titre de page de {len(titre_page)} caractères (au-delà de {LONGUEUR_TITRE_MAX})"))
     description = front.get(CLE_DESCRIPTION)
     if description and len(description) > LONGUEUR_DESCRIPTION_MAX:
         sortie.append(
             avertissement(front.lignes_champs[CLE_DESCRIPTION], CONTEXTE_FRONT, f"« {CLE_DESCRIPTION} » de {len(description)} caractères (au-delà de {LONGUEUR_DESCRIPTION_MAX})")
+        )
+    if description and len(description) < LONGUEUR_DESCRIPTION_MIN:
+        sortie.append(
+            avertissement(front.lignes_champs[CLE_DESCRIPTION], CONTEXTE_FRONT, f"« {CLE_DESCRIPTION} » de {len(description)} caractères (en dessous de {LONGUEUR_DESCRIPTION_MIN})")
         )
     return sortie
 
@@ -243,14 +311,14 @@ def valider_espaces(texte):
     ]
 
 
-def valider(texte, icones):
+def valider(texte, icones, dossier_source):
     consignees = []
     try:
         front, sections = decouper(texte, consignees)
     except ErreurContenu as fatale:
         return [erreur(LIGNE_FRONT, "", str(fatale))]
     anomalies = [erreur(ligne, contexte, message) for ligne, contexte, message in consignees]
-    anomalies += valider_front(front)
+    anomalies += valider_front(front, dossier_source)
     anomalies += valider_ordre(sections)
     for section in sections:
         if section.nom in SECTIONS:
@@ -268,7 +336,7 @@ def main():
     analyseur.add_argument("--source", type=Path, required=True, help="fichier markdown des données")
     arguments = analyseur.parse_args()
     try:
-        anomalies = valider(arguments.source.read_text(encoding="utf-8"), icones_du_gabarit(GABARIT))
+        anomalies = valider(arguments.source.read_text(encoding="utf-8"), icones_du_gabarit(GABARIT), arguments.source.parent)
     except (OSError, ValueError) as erreur_lecture:
         print(f"Erreur : {erreur_lecture}", file=sys.stderr)
         return 1

@@ -33,7 +33,13 @@ SECTIONS = [
     SECTION_LIENS,
 ]
 
-CHAMPS_FRONT = ["nom", "titre", "description", "initiales", "email", "pied"]
+CHAMPS_FRONT = ["nom", "titre", "description", "initiales", "email", "pied", "url"]
+CHAMPS_FRONT_OPTIONNELS = ["image"]
+CLE_NOM = "nom"
+CLE_TITRE = "titre"
+CLE_DESCRIPTION = "description"
+CLE_URL = "url"
+CLE_IMAGE = "image"
 TITRE = "Titre"
 ICONE = "Icône"
 INTRO = "Intro"
@@ -102,6 +108,10 @@ class Section:
 def identifiant(nom):
     decompose = unicodedata.normalize("NFD", nom)
     return "".join(c for c in decompose if not unicodedata.combining(c)).lower()
+
+
+def titre_de_page(nom, titre):
+    return f"{nom} — {titre}"
 
 
 def icones_du_gabarit(chemin):

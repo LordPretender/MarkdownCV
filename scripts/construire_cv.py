@@ -2,14 +2,21 @@
 
 import argparse
 import html
+import json
 import re
 import shutil
 import sys
+import urllib.parse
 from pathlib import Path
 
 from lecture_cv import (
     BLOC_ENVIRONNEMENT,
     CHAMPS_FRONT,
+    CLE_DESCRIPTION,
+    CLE_IMAGE,
+    CLE_NOM,
+    CLE_TITRE,
+    CLE_URL,
     CONTEXTE,
     DOSSIER_GABARIT,
     ENTREPRISE,
@@ -47,10 +54,39 @@ from lecture_cv import (
     icones_du_gabarit,
     identifiant,
     retirer_puce,
+    titre_de_page,
 )
-from valider_cv import NIVEAU_ERREUR, compter, valider
+from valider_cv import DIMENSIONS_IMAGE, NIVEAU_ERREUR, compter, valider
 
 FICHIER_FAVICON = "favicon.svg"
+FICHIER_ROBOTS = "robots.txt"
+FICHIER_SITEMAP = "sitemap.xml"
+FRAGMENT_PARTAGE = "partage"
+FRAGMENT_DONNEES_STRUCTUREES = "donnees_structurees"
+FICHIERS_SANS_FRAGMENTS = (FICHIER_FAVICON, FICHIER_ROBOTS, FICHIER_SITEMAP)
+FICHIERS_RENDUS = (FICHIER_GABARIT, *FICHIERS_SANS_FRAGMENTS)
+
+URL_SCHEMA_ORG = "https://schema.org"
+TYPE_PERSONNE = "Person"
+JSON_LD_CONTEXTE = "@context"
+JSON_LD_TYPE = "@type"
+JSON_LD_NOM = "name"
+JSON_LD_POSTE = "jobTitle"
+JSON_LD_URL = "url"
+JSON_LD_DESCRIPTION = "description"
+JSON_LD_LIENS = "sameAs"
+BALISE_SCRIPT_JSON_LD = '<script type="application/ld+json">'
+FIN_BALISE_SCRIPT = "</"
+FIN_BALISE_SCRIPT_ECHAPPEE = "<\\/"
+ATTRIBUT_PROPERTY = "property"
+ATTRIBUT_NAME = "name"
+META_IMAGE = "og:image"
+META_IMAGE_LARGEUR = "og:image:width"
+META_IMAGE_HAUTEUR = "og:image:height"
+META_IMAGE_ALT = "og:image:alt"
+META_CARTE_TWITTER = "twitter:card"
+META_IMAGE_TWITTER = "twitter:image"
+CARTE_TWITTER_GRANDE_IMAGE = "summary_large_image"
 DOSSIER_BUILD = "build"
 PREFIXE_DETAIL_EXPERIENCE = "d-"
 PREFIXE_DETAIL_PROJET = "p-"
@@ -226,6 +262,45 @@ def rendre_liens(section):
     return lignes
 
 
+def normaliser_url(url):
+    return url.strip().rstrip("/") + "/"
+
+
+def rendre_partage(valeurs):
+    image = valeurs.get(CLE_IMAGE)
+    if not image:
+        return []
+    url_image = valeurs[CLE_URL] + urllib.parse.quote(image)
+    titre_page = titre_de_page(valeurs[CLE_NOM], valeurs[CLE_TITRE])
+    largeur, hauteur = DIMENSIONS_IMAGE
+    meta = [
+        (ATTRIBUT_PROPERTY, META_IMAGE, url_image),
+        (ATTRIBUT_PROPERTY, META_IMAGE_LARGEUR, str(largeur)),
+        (ATTRIBUT_PROPERTY, META_IMAGE_HAUTEUR, str(hauteur)),
+        (ATTRIBUT_PROPERTY, META_IMAGE_ALT, titre_page),
+        (ATTRIBUT_NAME, META_CARTE_TWITTER, CARTE_TWITTER_GRANDE_IMAGE),
+        (ATTRIBUT_NAME, META_IMAGE_TWITTER, url_image),
+    ]
+    return [f'<meta {attribut}="{cle}" content="{echapper(contenu)}">' for attribut, cle, contenu in meta]
+
+
+def rendre_donnees_structurees(valeurs, section_liens):
+    personne = {
+        JSON_LD_CONTEXTE: URL_SCHEMA_ORG,
+        JSON_LD_TYPE: TYPE_PERSONNE,
+        JSON_LD_NOM: valeurs[CLE_NOM],
+        JSON_LD_POSTE: valeurs[CLE_TITRE],
+        JSON_LD_URL: valeurs[CLE_URL],
+        JSON_LD_DESCRIPTION: valeurs[CLE_DESCRIPTION],
+    }
+    liens = [entree.champs[URL] for entree in section_liens.entrees]
+    if liens:
+        personne[JSON_LD_LIENS] = liens
+    # Une valeur contenant « </script> » refermerait la balise : on échappe la fin de balise.
+    json_ld = json.dumps(personne, ensure_ascii=False, indent=2).replace(FIN_BALISE_SCRIPT, FIN_BALISE_SCRIPT_ECHAPPEE)
+    return [BALISE_SCRIPT_JSON_LD, *json_ld.splitlines(), "</script>"]
+
+
 def verifier_icone(icone, contexte, icones):
     if icone not in icones:
         raise ErreurContenu(f"{contexte} : icône « {icone} » absente du sprite du gabarit")
@@ -276,6 +351,7 @@ def preparer(front, sections, icones):
     par_nom = indexer_sections(sections)
 
     valeurs = dict(front)
+    valeurs[CLE_URL] = normaliser_url(front[CLE_URL])
     accueil = par_nom[SECTION_ACCUEIL].champs
     valeurs[CLE_ACCUEIL_STATUT] = champ(accueil, STATUT, SECTION_ACCUEIL)
     valeurs[CLE_ACCUEIL_SOUS_TITRE] = champ(accueil, SOUS_TITRE, SECTION_ACCUEIL)
@@ -297,6 +373,8 @@ def preparer(front, sections, icones):
         identifiant(SECTION_INTERETS): rendre_pastilles(par_nom[SECTION_INTERETS], icones),
         identifiant(SECTION_LIENS): rendre_liens(par_nom[SECTION_LIENS]),
         FRAGMENT_DETAILS: details_experience + details_projets + details_stages,
+        FRAGMENT_PARTAGE: rendre_partage(valeurs),
+        FRAGMENT_DONNEES_STRUCTUREES: rendre_donnees_structurees(valeurs, par_nom[SECTION_LIENS]),
     }
     return valeurs, fragments
 
@@ -335,7 +413,7 @@ def construire(source, destination):
     icones = icones_du_gabarit(dossier_gabarit / FICHIER_GABARIT)
 
     texte = source.read_text(encoding="utf-8")
-    anomalies = valider(texte, icones)
+    anomalies = valider(texte, icones, source.parent)
     for anomalie in anomalies:
         print(anomalie, file=sys.stderr)
     erreurs = compter(anomalies, NIVEAU_ERREUR)
@@ -347,9 +425,12 @@ def construire(source, destination):
 
     destination.mkdir(parents=True, exist_ok=True)
     rendre_gabarit(dossier_gabarit / FICHIER_GABARIT, destination / FICHIER_GABARIT, valeurs, fragments)
-    rendre_gabarit(dossier_gabarit / FICHIER_FAVICON, destination / FICHIER_FAVICON, valeurs, {})
+    for nom_fichier in FICHIERS_SANS_FRAGMENTS:
+        rendre_gabarit(dossier_gabarit / nom_fichier, destination / nom_fichier, valeurs, {})
+    if valeurs.get(CLE_IMAGE):
+        shutil.copy2(source.parent / valeurs[CLE_IMAGE], destination / valeurs[CLE_IMAGE])
     for fichier in dossier_gabarit.iterdir():
-        if fichier.is_file() and fichier.name not in (FICHIER_GABARIT, FICHIER_FAVICON):
+        if fichier.is_file() and fichier.name not in FICHIERS_RENDUS:
             shutil.copy2(fichier, destination / fichier.name)
 
 

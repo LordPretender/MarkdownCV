@@ -5,6 +5,7 @@ description: CV en une page de Camille Martin, analyste développeur : applicati
 initiales: CM
 email: contact@example.com
 pied: Modèle de démonstration. Toutes les données sont fictives.
+url: https://www.example.com/
 ---
 
 ## Accueil
