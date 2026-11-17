@@ -28,6 +28,7 @@ from lecture_cv import (
     SECTION_COMPETENCES,
     SECTION_DIPLOMES,
     SECTION_EXPERIENCE,
+    SECTION_INTERETS,
     SECTION_LANGUES,
     SECTION_LIENS,
     SECTION_PROFIL,
@@ -73,6 +74,7 @@ CHAMPS_SECTION = {
     SECTION_STAGES: [ICONE, TITRE, INTRO],
     SECTION_DIPLOMES: [ICONE, TITRE, INTRO],
     SECTION_LANGUES: [ICONE, TITRE, INTRO],
+    SECTION_INTERETS: [ICONE, TITRE, INTRO],
     SECTION_LIENS: [ICONE, TITRE],
 }
 CHAMPS_ENTREE_REQUIS = {
@@ -82,10 +84,12 @@ CHAMPS_ENTREE_REQUIS = {
     SECTION_STAGES: [ENTREPRISE, LIEU, PERIODE, LOGO],
     SECTION_DIPLOMES: [ETABLISSEMENT, PERIODE, LOGO],
     SECTION_LANGUES: [NIVEAU],
+    SECTION_INTERETS: [ICONE],
     SECTION_LIENS: [URL, LOGO],
 }
 CHAMPS_ENTREE_OPTIONNELS = {SECTION_PROJETS: [TITRE_DETAIL, PERIODE_DETAIL]}
 SECTIONS_AVEC_BLOCS = [SECTION_EXPERIENCE, SECTION_PROJETS, SECTION_STAGES]
+SECTIONS_AVEC_PUCES = [SECTION_COMPETENCES, SECTION_INTERETS]
 CHAMPS_PERIODE = [PERIODE, PERIODE_DETAIL]
 
 
@@ -202,9 +206,9 @@ def valider_entree(section, entree, icones):
     url = entree.champs.get(URL)
     if url and not url.startswith(PREFIXES_URL):
         sortie.append(erreur(entree.lignes_champs[URL], contexte, f"« {URL} » doit commencer par https:// ou http://"))
-    if nom == SECTION_COMPETENCES and not entree.puces:
-        sortie.append(erreur(entree.ligne, contexte, "aucune compétence listée"))
-    if nom != SECTION_COMPETENCES and entree.puces:
+    if nom in SECTIONS_AVEC_PUCES and not entree.puces:
+        sortie.append(erreur(entree.ligne, contexte, "aucune puce listée"))
+    if nom not in SECTIONS_AVEC_PUCES and entree.puces:
         sortie.append(erreur(entree.lignes_puces[0], contexte, "puces ignorées par le rendu dans cette section"))
     if nom not in SECTIONS_AVEC_BLOCS and entree.blocs:
         sortie.append(erreur(entree.blocs[0].ligne, contexte, "blocs (####) ignorés par le rendu dans cette section"))

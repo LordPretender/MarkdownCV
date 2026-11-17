@@ -29,6 +29,7 @@ from lecture_cv import (
     SECTION_COMPETENCES,
     SECTION_DIPLOMES,
     SECTION_EXPERIENCE,
+    SECTION_INTERETS,
     SECTION_LANGUES,
     SECTION_LIENS,
     SECTION_PROFIL,
@@ -164,13 +165,13 @@ def rendre_projets(section):
     return cartes, details
 
 
-def rendre_competences(section, icones):
+def rendre_pastilles(section, icones):
     lignes = []
     for entree in section.entrees:
-        contexte = f"{SECTION_COMPETENCES} / {entree.titre}"
+        contexte = f"{section.nom} / {entree.titre}"
         icone = verifier_icone(champ(entree.champs, ICONE, contexte), contexte, icones)
         if not entree.puces:
-            raise ErreurContenu(f"{contexte} : aucune compétence listée")
+            raise ErreurContenu(f"{contexte} : aucune puce listée")
         lignes += [
             f'<li class="skill"><h3><svg class="ico"><use href="#i-{icone}"/></svg>{echapper(entree.titre)}</h3>',
             f"  {liste_chips(entree.puces)}</li>",
@@ -283,11 +284,12 @@ def preparer(front, sections, icones):
     fragments = {
         FRAGMENT_NAV: nav,
         identifiant(SECTION_EXPERIENCE): cartes_experience,
-        identifiant(SECTION_COMPETENCES): rendre_competences(par_nom[SECTION_COMPETENCES], icones),
+        identifiant(SECTION_COMPETENCES): rendre_pastilles(par_nom[SECTION_COMPETENCES], icones),
         identifiant(SECTION_PROJETS): cartes_projets,
         identifiant(SECTION_STAGES): cartes_stages,
         identifiant(SECTION_DIPLOMES): rendre_diplomes(par_nom[SECTION_DIPLOMES]),
         identifiant(SECTION_LANGUES): rendre_langues(par_nom[SECTION_LANGUES]),
+        identifiant(SECTION_INTERETS): rendre_pastilles(par_nom[SECTION_INTERETS], icones),
         identifiant(SECTION_LIENS): rendre_liens(par_nom[SECTION_LIENS]),
         FRAGMENT_DETAILS: details_experience + details_projets + details_stages,
     }
