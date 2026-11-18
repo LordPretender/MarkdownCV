@@ -168,10 +168,13 @@ def valider_fichier_voisin(front, cle, extensions, libelle_extensions, dossier_s
         return [erreur(ligne, CONTEXTE_FRONT, f"« {cle} » doit être un fichier {libelle_extensions}")]
     if nom_fichier in noms_reserves:
         return [erreur(ligne, CONTEXTE_FRONT, f"« {cle} » porte le nom d'un fichier du gabarit ({nom_fichier}) que la copie écraserait")]
-    chemin = dossier_source / nom_fichier
-    if not chemin.is_file():
-        return [erreur(ligne, CONTEXTE_FRONT, f"« {cle} » : fichier introuvable ({chemin})")]
-    return []
+    return erreur_si_introuvable(front, cle, dossier_source / nom_fichier)
+
+
+def erreur_si_introuvable(front, cle, chemin):
+    if chemin.is_file():
+        return []
+    return [erreur(front.lignes_champs[cle], CONTEXTE_FRONT, f"« {cle} » : fichier introuvable ({chemin})")]
 
 
 def valider_image(front, dossier_source):
@@ -198,7 +201,11 @@ def valider_image(front, dossier_source):
 def valider_cv_pdf(front, dossier_source):
     if not front.get(CLE_CV_PDF):
         return []
-    return valider_fichier_voisin(front, CLE_CV_PDF, (EXTENSION_PDF,), EXTENSION_PDF, dossier_source)
+    chemin_pdf = front[CLE_CV_PDF]
+    ligne = front.lignes_champs[CLE_CV_PDF]
+    if not chemin_pdf.lower().endswith(EXTENSION_PDF):
+        return [erreur(ligne, CONTEXTE_FRONT, f"« {CLE_CV_PDF} » doit être un fichier {EXTENSION_PDF}")]
+    return erreur_si_introuvable(front, CLE_CV_PDF, dossier_source / chemin_pdf)
 
 
 def valider_front(front, dossier_source):
