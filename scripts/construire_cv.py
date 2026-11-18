@@ -69,7 +69,13 @@ FRAGMENT_PARTAGE = "partage"
 FRAGMENT_DONNEES_STRUCTUREES = "donnees_structurees"
 FRAGMENT_ICONES = "icones"
 FRAGMENT_TELECHARGEMENT = "telechargement"
-LIBELLE_TELECHARGEMENT = "Télécharger mon CV"
+FRAGMENT_IMPRESSION = "impression"
+LIBELLE_TELECHARGEMENT = "Télécharger mon CV (PDF)"
+TEXTE_BANDEAU_TELECHARGEMENT = "Une version PDF de ce CV est disponible."
+TEXTE_IMPRESSION = "Ce CV est conçu pour être consulté en ligne."
+TEXTE_IMPRESSION_PDF = "La version PDF à imprimer se trouve en bas de la page, après la section « {section} » (accessible depuis la navigation)."
+TEXTE_IMPRESSION_SITE = "Retrouvez-le à l'adresse suivante :"
+CLE_LIENS_TITRE = "liens_titre"
 PREFIXE_NOM_PDF = "CV"
 EXTENSION_PDF = ".pdf"
 RE_CARACTERES_NOM_FICHIER = re.compile(r"[^A-Za-z0-9]+")
@@ -369,7 +375,31 @@ def nom_pdf_publie(valeurs):
 def rendre_telechargement(nom_pdf):
     if not nom_pdf:
         return []
-    return [f'<a class="download" href="{echapper(urllib.parse.quote(nom_pdf))}" download>{LIBELLE_TELECHARGEMENT}</a>']
+    return [
+        '<aside class="download-banner">',
+        '  <div class="container">',
+        f"    <p>{TEXTE_BANDEAU_TELECHARGEMENT}</p>",
+        f'    <a class="download" href="{echapper(urllib.parse.quote(nom_pdf))}" download{attributs_lien_externe()}>{LIBELLE_TELECHARGEMENT}</a>',
+        "  </div>",
+        "</aside>",
+    ]
+
+
+def rendre_impression(valeurs, nom_pdf):
+    """Encart seul imprimé à la place du site : indique où trouver le PDF sur la page, ou l'adresse du site sans PDF."""
+    adresse = valeurs[CLE_URL]
+    if nom_pdf:
+        consigne = TEXTE_IMPRESSION_PDF.format(section=valeurs[CLE_LIENS_TITRE])
+    else:
+        consigne = TEXTE_IMPRESSION_SITE
+    return [
+        '<div class="print-only">',
+        f'  <p class="print-nom">{echapper(valeurs[CLE_NOM])}</p>',
+        f"  <p>{echapper(valeurs[CLE_TITRE])}</p>",
+        f"  <p>{TEXTE_IMPRESSION} {echapper(consigne)}</p>",
+        f'  <p><a href="{echapper(adresse)}">{echapper(adresse)}</a></p>',
+        "</div>",
+    ]
 
 
 def rendre_icones(produits):
@@ -468,6 +498,7 @@ def preparer(front, sections, icones):
         FRAGMENT_PARTAGE: [],
         FRAGMENT_ICONES: [],
         FRAGMENT_TELECHARGEMENT: [],
+        FRAGMENT_IMPRESSION: [],
         FRAGMENT_DONNEES_STRUCTUREES: rendre_donnees_structurees(valeurs, par_nom[SECTION_LIENS]),
     }
     return valeurs, fragments
@@ -529,6 +560,7 @@ def construire(source, destination):
     if cv_pdf:
         shutil.copy2(source.parent / cv_pdf, destination / nom_pdf)
     fragments[FRAGMENT_TELECHARGEMENT] = rendre_telechargement(nom_pdf)
+    fragments[FRAGMENT_IMPRESSION] = rendre_impression(valeurs, nom_pdf)
     produits = rendre_images(valeurs, dossier_gabarit, destination)
     fragments[FRAGMENT_PARTAGE] = rendre_partage(valeurs, image_fournie or (FICHIER_OG if FICHIER_OG in produits else None))
     fragments[FRAGMENT_ICONES] = rendre_icones(produits)

@@ -122,19 +122,32 @@ h1 {
 
 .print-only { display: none; }
 
-.download {
-  display: inline-block;
-  margin: 0 0 0.5rem;
-  padding: 0.5rem 1.1rem;
-  border-radius: 999px;
+.download-banner {
+  margin-top: 3rem;
+  padding: 2rem 0;
   background: var(--accent);
   color: var(--bg);
+}
+.download-banner .container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.download-banner p { margin: 0; font-size: 1.05rem; font-weight: 600; }
+.download {
+  display: inline-block;
+  padding: 0.55rem 1.3rem;
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text);
   font-size: 0.95rem;
   font-weight: 600;
   text-decoration: none;
 }
-.download:hover,
-.download:focus-visible { opacity: 0.85; }
+.download:hover { opacity: 0.85; }
+.download:focus-visible { outline: 3px solid var(--text); outline-offset: 3px; }
 
 .profil-texte {
   margin: 1rem 0 0;
@@ -415,70 +428,10 @@ body { padding-bottom: 5rem; }
 }
 
 @media print {
-  :root {
-    --bg: #ffffff;
-    --surface: #ffffff;
-    --text: #000000;
-    --muted: #333333;
-    --border: #bbbbbb;
-    --accent: #000000;
-    --accent-soft: #dddddd;
-    --chip: #eeeeee;
-    --logo-bg: #eeeeee;
-  }
-
-  .nav,
-  .overlay,
-  .drawer,
-  .status,
-  .skip { display: none !important; }
-
-  body { padding-bottom: 0; font-size: 10pt; line-height: 1.4; }
-  .hero { padding-top: 0; padding-bottom: 0; }
-  .hero-top { margin-bottom: 0.25rem; }
-  .job-sub { margin-bottom: 0.4rem; }
-  .profil-texte { margin-top: 0.4rem; }
-  .print-only { display: block; margin: 0 0 0.4rem; color: var(--muted); }
-  .download { display: none !important; }
-  section { padding-top: 0.9rem; }
-  .intro { display: none; }
-  section > h2 + .card-list,
-  section > h2 + .link-list { margin-top: 0.5rem; }
-  .card-list,
-  .skill-list,
-  .lang-list,
-  .link-list { gap: 0.4rem; }
-  .card { padding: 0.5rem 0.75rem; }
-  .skill { padding: 0.6rem 0.75rem; }
-  .skill h3 { margin-bottom: 0.4rem; }
-  .footer { padding: 1rem 0; }
-
-  .card,
-  .skill,
-  li,
-  section > h2 { break-inside: avoid; }
-  section > h2 { break-after: avoid; }
-
-  .card { transform: none !important; }
-  .chip { border: 1px solid var(--border); background: none; }
-
-  .link-list .card { flex-wrap: wrap; }
-  a.card[href^="http"]::after {
-    content: attr(href);
-    flex-basis: 100%;
-    padding-left: 3.65rem;
-    overflow-wrap: anywhere;
-    font-size: 0.8rem;
-    color: var(--muted);
-  }
-  .logo.dark { background: #fff; color: #000; border: 1px solid var(--border); }
-
-  .detail-store,
-  .detail-store[hidden] { display: block !important; }
-  .detail-store::before { content: "Détail"; display: block; margin-top: 1rem; font-size: 1.1rem; font-weight: 700; }
-  .detail-store > div { break-inside: avoid; margin-top: 0.75rem; }
-  .detail-store > div::before { content: attr(data-title) " — " attr(data-sub); display: block; font-weight: 600; }
-  .detail-store h3 { margin: 0.5rem 0 0.2rem; font-size: 0.95rem; font-weight: 600; }
-  .detail-store p { margin: 0; color: var(--muted); }
-  .detail-store .bullets li { margin-bottom: 0.2rem; }
+  body > *:not(.print-only) { display: none !important; }
+  body { background: #fff; color: #000; }
+  .print-only { display: block; padding: 2rem 0; font-size: 12pt; line-height: 1.6; }
+  .print-only .print-nom { margin: 0; font-size: 20pt; font-weight: 700; }
+  .print-only p { margin: 0 0 0.75rem; }
+  .print-only a { color: #000; overflow-wrap: anywhere; }
 }
