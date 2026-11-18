@@ -9,7 +9,9 @@ Modèle de CV en une page, statique, sans framework ni dépendance. Les données
 - Les stages ont leur propre section `Stages` (cartes cliquables quand elles ont du détail), placée entre Projets et Diplômes ; le format est dans `exemple.md`
 - Les centres d'intérêt ont leur propre section `Intérêts` (pastilles groupées comme les compétences), placée entre Langues et Liens ; le format est dans `exemple.md`
 - Le front-matter porte `url` (adresse publique du site, obligatoire : canonical, Open Graph, JSON-LD, `robots.txt` et `sitemap.xml` en dépendent) et `image` (optionnel) ; le format est dans `exemple.md`
-- `image` : visuel de partage en PNG de 1200x630 px, rangé à côté du fichier de données (pas dans le dépôt, c'est une donnée personnelle), sans photo conseillée ; le build le copie à la racine du site. Sans `image`, aucune balise d'image n'est émise et le validateur avertit
+- L'image de partage (`og.png`, 1200x630 px) est générée par le build à partir du gabarit `src/og.html`, rendu par Edge ou Chrome en mode headless, sans photo ; `image` (optionnel) sert seulement à la remplacer par un PNG de 1200x630 px rangé à côté du fichier de données (pas dans le dépôt, c'est une donnée personnelle), que le build copie à la racine du site
+- L'icône d'écran d'accueil `icone.png` (180x180 px, gabarit `src/icone.html`) est générée de la même façon ; si aucun navigateur n'est trouvé, le build avertit sans échouer et n'émet alors ni balise d'image de partage ni `apple-touch-icon`
+- Redirection vers `www`, compression et cache se règlent côté serveur (Apache : un `.htaccess` placé dans `build/`, non versionné, que le build n'écrase pas)
 - Lancer `py -3 scripts/construire_cv.py --source <chemin du fichier>` pour générer `build/` (options `--source` et `--destination`, voir `scripts/README.md`)
 - Le fichier est validé avant la génération : une erreur (section ou champ manquant, icône inconnue, URL invalide, `email` absent…) bloque le build avec son numéro de ligne, les avertissements s'affichent sans bloquer ; `py -3 scripts/valider_cv.py --source <chemin du fichier>` lance la validation seule
 - Ouvrir `build/index.html` dans un navigateur
@@ -18,7 +20,7 @@ Modèle de CV en une page, statique, sans framework ni dépendance. Les données
 ## Structure
 
 - `exemple.md` : modèle fictif dont le fichier de données reprend le format
-- `src/` : gabarit `index.html` (contenu de la page et script du tiroir de détail), `favicon.svg` (gabarit du favicon, rendu avec les initiales du CV) et `style.css` (mise en page, thèmes clair et sombre, responsive), et les gabarits `robots.txt` et `sitemap.xml`, sans aucune donnée
+- `src/` : gabarit `index.html` (contenu de la page et script du tiroir de détail), `favicon.svg` (gabarit du favicon, rendu avec les initiales du CV) et `style.css` (mise en page, thèmes clair et sombre, responsive), les gabarits `robots.txt` et `sitemap.xml`, et les gabarits `og.html` et `icone.html` (rendus en PNG par le build), sans aucune donnée
 - `scripts/` : build, validation et lecture du fichier de données, voir `scripts/README.md`
 - `build/` : site généré, à ne pas éditer à la main ; non versionné (ignoré par git), à régénérer après un clone
 
@@ -26,4 +28,4 @@ Modèle de CV en une page, statique, sans framework ni dépendance. Les données
 
 La structure générale (une page, sections empilées) s'inspire des CV en une page courants. Le code, les textes et l'identité graphique sont originaux : aucun fichier, texte ni image d'un modèle tiers n'est repris.
 
-Police : Inter (Google Fonts, licence OFL). Code publié sous licence MIT, voir `LICENSE`.
+Polices : le site utilise la pile de polices du système, aucune police n'est téléchargée et aucun service tiers n'est appelé. Code publié sous licence MIT, voir `LICENSE`.
