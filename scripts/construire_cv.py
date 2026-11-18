@@ -78,6 +78,7 @@ NAVIGATEURS = (
 )
 COMMANDES_NAVIGATEUR = ("msedge", "chrome", "google-chrome", "chromium")
 OPTIONS_NAVIGATEUR = ("--headless", "--disable-gpu", "--hide-scrollbars")
+ATTRIBUTS_ICONE_DECORATIVE = 'aria-hidden="true" focusable="false"'
 OPTION_CAPTURE = "--screenshot="
 OPTION_TAILLE_FENETRE = "--window-size="
 DELAI_RENDU_SECONDES = 60
@@ -232,7 +233,7 @@ def rendre_pastilles(section, icones):
         if not entree.puces:
             raise ErreurContenu(f"{contexte} : aucune puce listée")
         lignes += [
-            f'<li class="skill"><h3><svg class="ico"><use href="#i-{icone}"/></svg>{echapper(entree.titre)}</h3>',
+            f'<li class="skill"><h3><svg class="ico" {ATTRIBUTS_ICONE_DECORATIVE}><use href="#i-{icone}"/></svg>{echapper(entree.titre)}</h3>',
             f"  {liste_chips(entree.puces)}</li>",
         ]
     return lignes
@@ -275,7 +276,7 @@ def rendre_liens(section):
             f'<li><a class="card" href="{echapper(url)}"{attributs_lien_externe()}>'
             f'<span class="logo dark">{echapper(champ(entree.champs, LOGO, contexte))}</span>'
             f'<span class="card-title">{echapper(entree.titre)}</span>'
-            f'<svg class="arrow"><use href="#i-arrow"/></svg></a></li>'
+            f'<svg class="arrow" {ATTRIBUTS_ICONE_DECORATIVE}><use href="#i-arrow"/></svg></a></li>'
         )
     return lignes
 
@@ -396,7 +397,7 @@ def preparer_navigation(par_nom, icones, valeurs):
         icone = verifier_icone(champ(section.champs, ICONE, nom), nom, icones)
         nav.append(
             f'<a href="#{identifiant(nom)}" data-label="{echapper(nom)}" aria-label="{echapper(nom)}">'
-            f'<svg class="ico"><use href="#i-{icone}"/></svg></a>'
+            f'<svg class="ico" {ATTRIBUTS_ICONE_DECORATIVE}><use href="#i-{icone}"/></svg></a>'
         )
         if nom == SECTION_ACCUEIL:
             continue

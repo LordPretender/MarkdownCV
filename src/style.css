@@ -37,6 +37,25 @@ body {
 
 body.locked { overflow: hidden; }
 
+.skip {
+  position: absolute;
+  left: -9999px;
+}
+.skip:focus {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 20;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+main:focus { outline: none; }
+
 ul { list-style: none; margin: 0; padding: 0; }
 
 .container { width: min(100% - 2rem, 880px); margin-inline: auto; }
@@ -377,4 +396,37 @@ body { padding-bottom: 5rem; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .overlay, .drawer, .card, .nav a { transition: none; }
+}
+
+@media print {
+  :root {
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --text: #000000;
+    --muted: #333333;
+    --border: #bbbbbb;
+    --accent: #000000;
+    --accent-soft: #dddddd;
+    --chip: #eeeeee;
+    --logo-bg: #eeeeee;
+  }
+
+  .nav,
+  .overlay,
+  .drawer,
+  .status,
+  .skip { display: none !important; }
+
+  body { padding-bottom: 0; font-size: 11pt; }
+  .hero { padding-top: 0; }
+  section { padding-top: 1.25rem; }
+
+  .card,
+  .skill,
+  li,
+  section > h2 { break-inside: avoid; }
+  section > h2 { break-after: avoid; }
+
+  .card { transform: none !important; }
+  a.card[href^="http"]::after { content: " (" attr(href) ")"; font-size: 0.8rem; color: var(--muted); }
 }

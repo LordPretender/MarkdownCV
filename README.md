@@ -15,6 +15,8 @@ Modèle de CV en une page, statique, sans framework ni dépendance. Les données
 - Lancer `py -3 scripts/construire_cv.py --source <chemin du fichier>` pour générer `build/` (options `--source` et `--destination`, voir `scripts/README.md`)
 - Le fichier est validé avant la génération : une erreur (section ou champ manquant, icône inconnue, URL invalide, `email` absent…) bloque le build avec son numéro de ligne, les avertissements s'affichent sans bloquer ; `py -3 scripts/valider_cv.py --source <chemin du fichier>` lance la validation seule
 - Ouvrir `build/index.html` dans un navigateur
+- La page s'imprime proprement (navigation et tiroir masqués, couleurs neutres, adresses des liens affichées)
+- Un lien d'évitement et un focus visible permettent la navigation au clavier ; les icônes décoratives sont masquées aux lecteurs d'écran
 - Adapter les couleurs dans les variables `:root` de `src/style.css`
 
 ## Structure
