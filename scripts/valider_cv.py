@@ -69,7 +69,7 @@ CARACTERES_URL_INTERDITS = (" ", '"', "<", ">")
 SEPARATEURS_CHEMIN = ("/", "\\")
 EXTENSIONS_IMAGE = (".png", ".jpg", ".jpeg")
 EXTENSION_PNG = ".png"
-FICHIERS_RESERVES = ("index.html", "style.css", "favicon.svg", "robots.txt", "sitemap.xml")
+FICHIERS_RESERVES = ("index.html", "style.css", "favicon.svg", "robots.txt", "sitemap.xml", "og.html", "icone.html", "icone.png")
 SIGNATURE_PNG = b"\x89PNG\r\n\x1a\n"
 TAILLE_ENTETE_PNG = 24
 DECALAGE_DIMENSIONS_PNG = 16
@@ -158,7 +158,7 @@ def valider_url(front):
 def valider_image(front, dossier_source):
     image = front.get(CLE_IMAGE)
     if not image:
-        return [avertissement(LIGNE_FRONT, CONTEXTE_FRONT, "aucune image de partage : les aperçus LinkedIn et Slack seront sans visuel")]
+        return []
     ligne = front.lignes_champs[CLE_IMAGE]
     if any(separateur in image for separateur in SEPARATEURS_CHEMIN):
         return [erreur(ligne, CONTEXTE_FRONT, f"« {CLE_IMAGE} » doit être un nom de fichier placé à côté du CV source, sans sous-dossier")]

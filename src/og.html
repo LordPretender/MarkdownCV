@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>{{nom}}</title>
+<style>
+html, body {
+  margin: 0;
+  width: 1200px;
+  height: 630px;
+  overflow: hidden;
+}
+body {
+  box-sizing: border-box;
+  padding: 80px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 28px;
+  background: #1f7a5a;
+  color: #ffffff;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+.initiales {
+  width: 120px;
+  height: 120px;
+  border-radius: 28px;
+  background: #ffffff;
+  color: #1f7a5a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 52px;
+  font-weight: 700;
+}
+.nom {
+  font-size: 84px;
+  font-weight: 700;
+  line-height: 1.05;
+}
+.titre {
+  font-size: 44px;
+  font-weight: 400;
+  opacity: 0.92;
+}
+</style>
+</head>
+<body>
+<div class="initiales">{{initiales}}</div>
+<div class="nom">{{nom}}</div>
+<div class="titre">{{titre}}</div>
+</body>
+</html>

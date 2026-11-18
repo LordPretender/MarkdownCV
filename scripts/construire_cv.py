@@ -5,7 +5,9 @@ import html
 import json
 import re
 import shutil
+import subprocess
 import sys
+import tempfile
 import urllib.parse
 from pathlib import Path
 
@@ -63,8 +65,24 @@ FICHIER_ROBOTS = "robots.txt"
 FICHIER_SITEMAP = "sitemap.xml"
 FRAGMENT_PARTAGE = "partage"
 FRAGMENT_DONNEES_STRUCTUREES = "donnees_structurees"
+FRAGMENT_ICONES = "icones"
+FICHIER_GABARIT_OG = "og.html"
+FICHIER_GABARIT_ICONE = "icone.html"
+FICHIER_OG = "og.png"
+FICHIER_ICONE = "icone.png"
+TAILLE_ICONE = (180, 180)
+NAVIGATEURS = (
+    r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+    r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+    r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+)
+COMMANDES_NAVIGATEUR = ("msedge", "chrome", "google-chrome", "chromium")
+OPTIONS_NAVIGATEUR = ("--headless", "--disable-gpu", "--hide-scrollbars")
+OPTION_CAPTURE = "--screenshot="
+OPTION_TAILLE_FENETRE = "--window-size="
+DELAI_RENDU_SECONDES = 60
 FICHIERS_SANS_FRAGMENTS = (FICHIER_FAVICON, FICHIER_ROBOTS, FICHIER_SITEMAP)
-FICHIERS_RENDUS = (FICHIER_GABARIT, *FICHIERS_SANS_FRAGMENTS)
+FICHIERS_RENDUS = (FICHIER_GABARIT, FICHIER_GABARIT_OG, FICHIER_GABARIT_ICONE, *FICHIERS_SANS_FRAGMENTS)
 
 URL_SCHEMA_ORG = "https://schema.org"
 TYPE_PERSONNE = "Person"
@@ -266,8 +284,7 @@ def normaliser_url(url):
     return url.strip().rstrip("/") + "/"
 
 
-def rendre_partage(valeurs):
-    image = valeurs.get(CLE_IMAGE)
+def rendre_partage(valeurs, image):
     if not image:
         return []
     url_image = valeurs[CLE_URL] + urllib.parse.quote(image)
@@ -282,6 +299,56 @@ def rendre_partage(valeurs):
         (ATTRIBUT_NAME, META_IMAGE_TWITTER, url_image),
     ]
     return [f'<meta {attribut}="{cle}" content="{echapper(contenu)}">' for attribut, cle, contenu in meta]
+
+
+def trouver_navigateur():
+    candidats = [Path(chemin) for chemin in NAVIGATEURS]
+    candidats += [Path(trouve) for trouve in map(shutil.which, COMMANDES_NAVIGATEUR) if trouve]
+    return next((chemin for chemin in candidats if chemin.is_file()), None)
+
+
+def rendre_png(navigateur, gabarit, valeurs, taille, destination_png):
+    """Rend un gabarit HTML en PNG par un navigateur headless ; retourne False (avec avertissement) si le rendu échoue."""
+    largeur, hauteur = taille
+    with tempfile.TemporaryDirectory() as dossier_temporaire:
+        page = Path(dossier_temporaire) / gabarit.name
+        rendre_gabarit(gabarit, page, valeurs, {})
+        commande = [
+            str(navigateur),
+            *OPTIONS_NAVIGATEUR,
+            f"{OPTION_CAPTURE}{destination_png}",
+            f"{OPTION_TAILLE_FENETRE}{largeur},{hauteur}",
+            page.as_uri(),
+        ]
+        try:
+            resultat = subprocess.run(commande, capture_output=True, timeout=DELAI_RENDU_SECONDES)
+        except (OSError, subprocess.SubprocessError) as erreur:
+            print(f"Avertissement : rendu de {destination_png.name} impossible ({erreur})", file=sys.stderr)
+            return False
+    if resultat.returncode != 0 or not destination_png.is_file():
+        print(f"Avertissement : rendu de {destination_png.name} en échec (code {resultat.returncode})", file=sys.stderr)
+        return False
+    return True
+
+
+def rendre_images(valeurs, dossier_gabarit, destination):
+    """Génère icone.png et, sans image fournie, og.png ; retourne l'ensemble des PNG produits."""
+    navigateur = trouver_navigateur()
+    if navigateur is None:
+        print("Avertissement : aucun navigateur Edge ou Chrome trouvé, image de partage et icône non générées", file=sys.stderr)
+        return set()
+    demandes = [(FICHIER_GABARIT_ICONE, TAILLE_ICONE, FICHIER_ICONE)]
+    if not valeurs.get(CLE_IMAGE):
+        demandes.append((FICHIER_GABARIT_OG, DIMENSIONS_IMAGE, FICHIER_OG))
+    return {
+        sortie
+        for gabarit, taille, sortie in demandes
+        if rendre_png(navigateur, dossier_gabarit / gabarit, valeurs, taille, destination / sortie)
+    }
+
+
+def rendre_icones(produits):
+    return [f'<link rel="apple-touch-icon" href="{FICHIER_ICONE}">'] if FICHIER_ICONE in produits else []
 
 
 def rendre_donnees_structurees(valeurs, section_liens):
@@ -373,7 +440,8 @@ def preparer(front, sections, icones):
         identifiant(SECTION_INTERETS): rendre_pastilles(par_nom[SECTION_INTERETS], icones),
         identifiant(SECTION_LIENS): rendre_liens(par_nom[SECTION_LIENS]),
         FRAGMENT_DETAILS: details_experience + details_projets + details_stages,
-        FRAGMENT_PARTAGE: rendre_partage(valeurs),
+        FRAGMENT_PARTAGE: [],
+        FRAGMENT_ICONES: [],
         FRAGMENT_DONNEES_STRUCTUREES: rendre_donnees_structurees(valeurs, par_nom[SECTION_LIENS]),
     }
     return valeurs, fragments
@@ -424,14 +492,18 @@ def construire(source, destination):
     valeurs, fragments = preparer(front, sections, icones)
 
     destination.mkdir(parents=True, exist_ok=True)
-    rendre_gabarit(dossier_gabarit / FICHIER_GABARIT, destination / FICHIER_GABARIT, valeurs, fragments)
-    for nom_fichier in FICHIERS_SANS_FRAGMENTS:
-        rendre_gabarit(dossier_gabarit / nom_fichier, destination / nom_fichier, valeurs, {})
-    if valeurs.get(CLE_IMAGE):
-        shutil.copy2(source.parent / valeurs[CLE_IMAGE], destination / valeurs[CLE_IMAGE])
     for fichier in dossier_gabarit.iterdir():
         if fichier.is_file() and fichier.name not in FICHIERS_RENDUS:
             shutil.copy2(fichier, destination / fichier.name)
+    image_fournie = valeurs.get(CLE_IMAGE)
+    if image_fournie:
+        shutil.copy2(source.parent / image_fournie, destination / image_fournie)
+    produits = rendre_images(valeurs, dossier_gabarit, destination)
+    fragments[FRAGMENT_PARTAGE] = rendre_partage(valeurs, image_fournie or (FICHIER_OG if FICHIER_OG in produits else None))
+    fragments[FRAGMENT_ICONES] = rendre_icones(produits)
+    rendre_gabarit(dossier_gabarit / FICHIER_GABARIT, destination / FICHIER_GABARIT, valeurs, fragments)
+    for nom_fichier in FICHIERS_SANS_FRAGMENTS:
+        rendre_gabarit(dossier_gabarit / nom_fichier, destination / nom_fichier, valeurs, {})
 
 
 def main():
