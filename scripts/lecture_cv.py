@@ -59,6 +59,7 @@ ETABLISSEMENT = "Établissement"
 NIVEAU = "Niveau"
 URL = "Url"
 BLOC_ENVIRONNEMENT = "Environnement"
+BLOC_COMPETENCES = "Compétences"
 
 RE_CHAMP = re.compile(r"^([^:#\-][^:]*?):\s*(.*)$")
 
@@ -119,12 +120,29 @@ def titre_de_page(nom, titre):
     return f"{nom} — {titre}"
 
 
+def cle_competence(libelle):
+    return libelle.strip().casefold()
+
+
+def indexer_competences(section):
+    """Index des compétences de la section : clé normalisée → (libellé, entrée catégorie) ; la première occurrence l'emporte."""
+    index = {}
+    for entree in section.entrees:
+        for libelle in entree.puces:
+            index.setdefault(cle_competence(libelle), (libelle, entree))
+    return index
+
+
 def icones_du_gabarit(chemin):
     return set(re.findall(r'<symbol id="i-([\w-]+)"', chemin.read_text(encoding="utf-8")))
 
 
 def retirer_puce(ligne):
     return ligne[len(MARQUEUR_PUCE):]
+
+
+def puces_du_bloc(bloc):
+    return [retirer_puce(ligne) for ligne in bloc.lignes if ligne.startswith(MARQUEUR_PUCE)]
 
 
 def signaler(anomalies, numero, contexte, message):

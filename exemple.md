@@ -52,6 +52,14 @@ Logo: Lu
 - Docker
 - GitLab CI
 
+#### Compétences
+
+- TypeScript
+- PostgreSQL
+- Docker
+- GitLab CI
+- Rigueur
+
 ### Analyste développeur
 
 Entreprise: Fabrik Données
@@ -71,6 +79,14 @@ Logo: FD
 - SQL Server
 - SSIS
 - Git
+
+#### Compétences
+
+- Python
+- SQL
+- SQL Server
+- Git
+- Sens du travail en équipe
 
 ## Compétences
 
@@ -158,6 +174,13 @@ La conduite d'une refonte complète, de l'analyse du besoin à la mise en produc
 - PostgreSQL
 - Docker
 
+#### Compétences
+
+- TypeScript
+- SQL
+- PostgreSQL
+- Docker
+
 ### Passerelle ERP vers entrepôt de données
 
 Contexte: Fabrik Données
@@ -212,6 +235,11 @@ Logo: AP
 - PHP
 - JavaScript
 - MySQL
+
+#### Compétences
+
+- SQL
+- Curiosité
 
 ## Diplômes
 

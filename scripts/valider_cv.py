@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from lecture_cv import (
+    BLOC_COMPETENCES,
     BLOC_ENVIRONNEMENT,
     CHAMPS_FRONT,
     CHAMPS_FRONT_OPTIONNELS,
@@ -50,8 +51,11 @@ from lecture_cv import (
     TITRE_DETAIL,
     URL,
     ErreurContenu,
+    cle_competence,
     decouper,
     icones_du_gabarit,
+    indexer_competences,
+    puces_du_bloc,
     titre_de_page,
 )
 
@@ -273,21 +277,26 @@ def valider_champs(champs, lignes, requis, autorises, contexte, ligne_defaut, ic
     return sortie
 
 
-def valider_bloc(bloc, contexte):
+def valider_bloc(bloc, contexte, competences):
     if not bloc.lignes:
         return [erreur(bloc.ligne, contexte, f"bloc « {bloc.nom} » vide")]
     sortie = []
     puces = [est_puce(ligne) for ligne in bloc.lignes]
     if any(puces) and not all(puces):
         sortie.append(erreur(bloc.ligne, contexte, f"bloc « {bloc.nom} » mêle texte et puces"))
-    if bloc.nom == BLOC_ENVIRONNEMENT and not all(puces):
-        sortie.append(erreur(bloc.ligne, contexte, f"bloc « {BLOC_ENVIRONNEMENT} » doit être une liste à puces"))
+    for nom_liste in (BLOC_ENVIRONNEMENT, BLOC_COMPETENCES):
+        if bloc.nom == nom_liste and not all(puces):
+            sortie.append(erreur(bloc.ligne, contexte, f"bloc « {nom_liste} » doit être une liste à puces"))
+    if bloc.nom == BLOC_COMPETENCES:
+        for libelle in puces_du_bloc(bloc):
+            if cle_competence(libelle) not in competences:
+                sortie.append(erreur(bloc.ligne, contexte, f"compétence « {libelle} » absente de la section « {SECTION_COMPETENCES} »"))
     if MARQUEUR_PUCE.strip() in bloc.lignes:
         sortie.append(erreur(bloc.ligne, contexte, f"bloc « {bloc.nom} » contient une puce vide"))
     return sortie
 
 
-def valider_entree(section, entree, icones):
+def valider_entree(section, entree, icones, competences):
     nom = section.nom
     contexte = f"{nom} / {entree.titre}"
     requis = CHAMPS_ENTREE_REQUIS[nom]
@@ -308,11 +317,11 @@ def valider_entree(section, entree, icones):
     if nom not in SECTIONS_AVEC_BLOCS and entree.blocs:
         sortie.append(erreur(entree.blocs[0].ligne, contexte, "blocs (####) ignorés par le rendu dans cette section"))
     for bloc in entree.blocs:
-        sortie.extend(valider_bloc(bloc, contexte))
+        sortie.extend(valider_bloc(bloc, contexte, competences))
     return sortie
 
 
-def valider_section(section, icones):
+def valider_section(section, icones, competences):
     nom = section.nom
     sortie = valider_champs(section.champs, section.lignes_champs, CHAMPS_SECTION[nom], CHAMPS_SECTION[nom], nom, section.ligne, icones)
     if nom not in CHAMPS_ENTREE_REQUIS:
@@ -326,7 +335,32 @@ def valider_section(section, icones):
         if entree.titre in titres:
             sortie.append(erreur(entree.ligne, nom, f"entrée « {entree.titre} » en double (première ligne {titres[entree.titre]})"))
         titres.setdefault(entree.titre, entree.ligne)
-        sortie.extend(valider_entree(section, entree, icones))
+        sortie.extend(valider_entree(section, entree, icones, competences))
+    return sortie
+
+
+def blocs_competences(sections):
+    return [
+        bloc
+        for section in sections
+        if section.nom in SECTIONS_AVEC_BLOCS
+        for entree in section.entrees
+        for bloc in entree.blocs
+        if bloc.nom == BLOC_COMPETENCES
+    ]
+
+
+def valider_competences_inutilisees(sections, competences):
+    """Avertit des compétences jamais citées dans un bloc « Compétences » ; muet tant qu'aucun bloc n'est utilisé."""
+    blocs = blocs_competences(sections)
+    if not blocs:
+        return []
+    citees = {cle_competence(libelle) for bloc in blocs for libelle in puces_du_bloc(bloc)}
+    sortie = []
+    for cle, (libelle, entree) in competences.items():
+        if cle not in citees:
+            ligne = entree.lignes_puces[entree.puces.index(libelle)]
+            sortie.append(avertissement(ligne, f"{SECTION_COMPETENCES} / {entree.titre}", f"compétence « {libelle} » rattachée à aucune expérience, projet ou stage"))
     return sortie
 
 
@@ -347,9 +381,12 @@ def valider(texte, icones, dossier_source):
     anomalies = [erreur(ligne, contexte, message) for ligne, contexte, message in consignees]
     anomalies += valider_front(front, dossier_source)
     anomalies += valider_ordre(sections)
+    section_competences = next((s for s in sections if s.nom == SECTION_COMPETENCES), None)
+    competences = indexer_competences(section_competences) if section_competences else {}
     for section in sections:
         if section.nom in SECTIONS:
-            anomalies += valider_section(section, icones)
+            anomalies += valider_section(section, icones, competences)
+    anomalies += valider_competences_inutilisees(sections, competences)
     anomalies += valider_espaces(texte)
     return sorted(anomalies, key=lambda a: a.ligne)
 

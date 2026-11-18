@@ -13,6 +13,7 @@ import urllib.parse
 from pathlib import Path
 
 from lecture_cv import (
+    BLOC_COMPETENCES,
     BLOC_ENVIRONNEMENT,
     CHAMPS_FRONT,
     CLE_CV_PDF,
@@ -54,10 +55,12 @@ from lecture_cv import (
     TITRE_DETAIL,
     URL,
     ErreurContenu,
+    cle_competence,
     decouper,
     icones_du_gabarit,
     identifiant,
-    retirer_puce,
+    indexer_competences,
+    puces_du_bloc,
     sans_accents,
     titre_de_page,
 )
@@ -156,19 +159,43 @@ def liste_chips(items):
     return '<ul class="chips">' + "".join(f'<li class="chip">{echapper(i)}</li>' for i in items) + "</ul>"
 
 
-def rendre_bloc(bloc, contexte):
+def rendre_competences_liees(items, competences):
+    """Compétences d'un bloc, regroupées par catégorie dans l'ordre de la section « Compétences » (libellé canonique de la section)."""
+    groupes = {}
+    for item in items:
+        libelle, categorie = competences[cle_competence(item)]
+        groupes.setdefault(categorie.ligne, (categorie, []))[1].append(libelle)
+    sortie = ['<ul class="skill-groups">']
+    for _, (categorie, libelles) in sorted(groupes.items()):
+        icone = categorie.champs[ICONE]
+        sortie.append(
+            f'  <li><h4><svg class="ico" {ATTRIBUTS_ICONE_DECORATIVE}><use href="#i-{icone}"/></svg>{echapper(categorie.titre)}</h4>'
+        )
+        sortie.append(f"    {liste_chips(libelles)}</li>")
+    sortie.append("</ul>")
+    return sortie
+
+
+def rendre_bloc(bloc, contexte, competences):
     if not bloc.lignes:
         raise ErreurContenu(f"{contexte} : bloc « {bloc.nom} » vide")
     puces = all(ligne.startswith(MARQUEUR_PUCE) for ligne in bloc.lignes)
     if not puces and any(ligne.startswith(MARQUEUR_PUCE) for ligne in bloc.lignes):
         raise ErreurContenu(f"{contexte} : bloc « {bloc.nom} » mêle texte et puces")
-    items = [retirer_puce(ligne) for ligne in bloc.lignes] if puces else []
+    items = puces_du_bloc(bloc) if puces else []
 
     sortie = [f"<h3>{echapper(bloc.nom)}</h3>"]
     if bloc.nom == BLOC_ENVIRONNEMENT:
         if not puces:
             raise ErreurContenu(f"{contexte} : bloc « {BLOC_ENVIRONNEMENT} » doit être une liste à puces")
         sortie.append(liste_chips(items))
+    elif bloc.nom == BLOC_COMPETENCES:
+        if not puces:
+            raise ErreurContenu(f"{contexte} : bloc « {BLOC_COMPETENCES} » doit être une liste à puces")
+        inconnues = [i for i in items if cle_competence(i) not in competences]
+        if inconnues:
+            raise ErreurContenu(f"{contexte} : compétence « {inconnues[0]} » absente de la section « {SECTION_COMPETENCES} »")
+        sortie.extend(rendre_competences_liees(items, competences))
     elif puces:
         sortie.append('<ul class="bullets">')
         sortie.extend(f"  <li>{echapper(i)}</li>" for i in items)
@@ -178,12 +205,12 @@ def rendre_bloc(bloc, contexte):
     return sortie
 
 
-def rendre_detail(id_detail, titre, sous_titre, logo, entree, contexte):
+def rendre_detail(id_detail, titre, sous_titre, logo, entree, contexte, competences):
     lignes = [
         f'<div id="{id_detail}" data-title="{echapper(titre)}" data-sub="{echapper(sous_titre)}" data-logo="{echapper(logo)}">'
     ]
     for bloc in entree.blocs:
-        lignes.extend("  " + ligne for ligne in rendre_bloc(bloc, contexte))
+        lignes.extend("  " + ligne for ligne in rendre_bloc(bloc, contexte, competences))
     lignes.append("</div>")
     return lignes
 
@@ -206,7 +233,7 @@ def rendre_carte(id_detail, logo, titre, sous_titre, chips, cliquable):
     return [f'<li><button class="card" type="button" data-detail="{id_detail}">', *corps, "</button></li>"]
 
 
-def rendre_postes(section, nom_section, prefixe):
+def rendre_postes(section, nom_section, prefixe, competences):
     cartes, details = [], []
     for rang, entree in enumerate(section.entrees, 1):
         contexte = f"{nom_section} / {entree.titre}"
@@ -218,12 +245,12 @@ def rendre_postes(section, nom_section, prefixe):
         cartes += rendre_carte(id_detail, logo, entree.titre, entreprise, [periode, lieu], cliquable)
         if cliquable:
             details += rendre_detail(
-                id_detail, entree.titre, f"{entreprise} · {lieu} · {periode}", logo, entree, contexte
+                id_detail, entree.titre, f"{entreprise} · {lieu} · {periode}", logo, entree, contexte, competences
             )
     return cartes, details
 
 
-def rendre_projets(section):
+def rendre_projets(section, competences):
     cartes, details = [], []
     for rang, entree in enumerate(section.entrees, 1):
         contexte = f"{SECTION_PROJETS} / {entree.titre}"
@@ -241,6 +268,7 @@ def rendre_projets(section):
                 logo,
                 entree,
                 contexte,
+                competences,
             )
     return cartes, details
 
@@ -484,11 +512,12 @@ def preparer(front, sections, icones):
     valeurs[CLE_ACCUEIL_SOUS_TITRE] = champ(accueil, SOUS_TITRE, SECTION_ACCUEIL)
     nav = preparer_navigation(par_nom, icones, valeurs)
 
+    competences = indexer_competences(par_nom[SECTION_COMPETENCES])
     cartes_experience, details_experience = rendre_postes(
-        par_nom[SECTION_EXPERIENCE], SECTION_EXPERIENCE, PREFIXE_DETAIL_EXPERIENCE
+        par_nom[SECTION_EXPERIENCE], SECTION_EXPERIENCE, PREFIXE_DETAIL_EXPERIENCE, competences
     )
-    cartes_projets, details_projets = rendre_projets(par_nom[SECTION_PROJETS])
-    cartes_stages, details_stages = rendre_postes(par_nom[SECTION_STAGES], SECTION_STAGES, PREFIXE_DETAIL_STAGE)
+    cartes_projets, details_projets = rendre_projets(par_nom[SECTION_PROJETS], competences)
+    cartes_stages, details_stages = rendre_postes(par_nom[SECTION_STAGES], SECTION_STAGES, PREFIXE_DETAIL_STAGE, competences)
     fragments = {
         FRAGMENT_NAV: nav,
         identifiant(SECTION_EXPERIENCE): cartes_experience,
