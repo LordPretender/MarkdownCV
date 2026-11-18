@@ -14,6 +14,7 @@ from pathlib import Path
 from lecture_cv import (
     BLOC_ENVIRONNEMENT,
     CHAMPS_FRONT,
+    CLE_CV_PDF,
     CLE_DESCRIPTION,
     CLE_IMAGE,
     CLE_NOM,
@@ -56,6 +57,7 @@ from lecture_cv import (
     icones_du_gabarit,
     identifiant,
     retirer_puce,
+    sans_accents,
     titre_de_page,
 )
 from valider_cv import DIMENSIONS_IMAGE, NIVEAU_ERREUR, compter, valider
@@ -66,6 +68,13 @@ FICHIER_SITEMAP = "sitemap.xml"
 FRAGMENT_PARTAGE = "partage"
 FRAGMENT_DONNEES_STRUCTUREES = "donnees_structurees"
 FRAGMENT_ICONES = "icones"
+FRAGMENT_TELECHARGEMENT = "telechargement"
+LIBELLE_TELECHARGEMENT = "Télécharger mon CV"
+PREFIXE_NOM_PDF = "CV"
+EXTENSION_PDF = ".pdf"
+RE_CARACTERES_NOM_FICHIER = re.compile(r"[^A-Za-z0-9]+")
+SEPARATEUR_NOM_FICHIER = "-"
+SEPARATEUR_PARTIES_NOM_FICHIER = "_"
 FICHIER_GABARIT_OG = "og.html"
 FICHIER_GABARIT_ICONE = "icone.html"
 FICHIER_OG = "og.png"
@@ -348,6 +357,21 @@ def rendre_images(valeurs, dossier_gabarit, destination):
     }
 
 
+def nom_pdf_publie(valeurs):
+    """Nom du PDF publié : CV_<nom>_<titre>.pdf, accents retirés, espaces et ponctuation remplacés par un tiret, casse conservée."""
+    parties = [
+        RE_CARACTERES_NOM_FICHIER.sub(SEPARATEUR_NOM_FICHIER, sans_accents(valeurs[cle])).strip(SEPARATEUR_NOM_FICHIER)
+        for cle in (CLE_NOM, CLE_TITRE)
+    ]
+    return SEPARATEUR_PARTIES_NOM_FICHIER.join([PREFIXE_NOM_PDF, *parties]) + EXTENSION_PDF
+
+
+def rendre_telechargement(nom_pdf):
+    if not nom_pdf:
+        return []
+    return [f'<a class="download" href="{echapper(urllib.parse.quote(nom_pdf))}" download>{LIBELLE_TELECHARGEMENT}</a>']
+
+
 def rendre_icones(produits):
     return [f'<link rel="apple-touch-icon" href="{FICHIER_ICONE}">'] if FICHIER_ICONE in produits else []
 
@@ -443,6 +467,7 @@ def preparer(front, sections, icones):
         FRAGMENT_DETAILS: details_experience + details_projets + details_stages,
         FRAGMENT_PARTAGE: [],
         FRAGMENT_ICONES: [],
+        FRAGMENT_TELECHARGEMENT: [],
         FRAGMENT_DONNEES_STRUCTUREES: rendre_donnees_structurees(valeurs, par_nom[SECTION_LIENS]),
     }
     return valeurs, fragments
@@ -499,6 +524,11 @@ def construire(source, destination):
     image_fournie = valeurs.get(CLE_IMAGE)
     if image_fournie:
         shutil.copy2(source.parent / image_fournie, destination / image_fournie)
+    cv_pdf = valeurs.get(CLE_CV_PDF)
+    nom_pdf = nom_pdf_publie(valeurs) if cv_pdf else None
+    if cv_pdf:
+        shutil.copy2(source.parent / cv_pdf, destination / nom_pdf)
+    fragments[FRAGMENT_TELECHARGEMENT] = rendre_telechargement(nom_pdf)
     produits = rendre_images(valeurs, dossier_gabarit, destination)
     fragments[FRAGMENT_PARTAGE] = rendre_partage(valeurs, image_fournie or (FICHIER_OG if FICHIER_OG in produits else None))
     fragments[FRAGMENT_ICONES] = rendre_icones(produits)

@@ -34,12 +34,13 @@ SECTIONS = [
 ]
 
 CHAMPS_FRONT = ["nom", "titre", "description", "initiales", "email", "pied", "url"]
-CHAMPS_FRONT_OPTIONNELS = ["image"]
+CHAMPS_FRONT_OPTIONNELS = ["image", "cv_pdf"]
 CLE_NOM = "nom"
 CLE_TITRE = "titre"
 CLE_DESCRIPTION = "description"
 CLE_URL = "url"
 CLE_IMAGE = "image"
+CLE_CV_PDF = "cv_pdf"
 TITRE = "Titre"
 ICONE = "Icône"
 INTRO = "Intro"
@@ -105,9 +106,13 @@ class Section:
     lignes_champs: dict = field(default_factory=dict)
 
 
+def sans_accents(texte):
+    decompose = unicodedata.normalize("NFD", texte)
+    return "".join(c for c in decompose if not unicodedata.combining(c))
+
+
 def identifiant(nom):
-    decompose = unicodedata.normalize("NFD", nom)
-    return "".join(c for c in decompose if not unicodedata.combining(c)).lower()
+    return sans_accents(nom).lower()
 
 
 def titre_de_page(nom, titre):

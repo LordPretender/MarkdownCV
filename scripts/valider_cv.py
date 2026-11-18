@@ -11,6 +11,7 @@ from lecture_cv import (
     BLOC_ENVIRONNEMENT,
     CHAMPS_FRONT,
     CHAMPS_FRONT_OPTIONNELS,
+    CLE_CV_PDF,
     CLE_DESCRIPTION,
     CLE_IMAGE,
     CLE_NOM,
@@ -68,7 +69,9 @@ PREFIXE_HTTPS = "https://"
 CARACTERES_URL_INTERDITS = (" ", '"', "<", ">")
 SEPARATEURS_CHEMIN = ("/", "\\")
 EXTENSIONS_IMAGE = (".png", ".jpg", ".jpeg")
+LIBELLE_EXTENSIONS_IMAGE = ".png, .jpg ou .jpeg"
 EXTENSION_PNG = ".png"
+EXTENSION_PDF = ".pdf"
 FICHIERS_RESERVES = ("index.html", "style.css", "favicon.svg", "robots.txt", "sitemap.xml", "og.html", "icone.html", "icone.png")
 SIGNATURE_PNG = b"\x89PNG\r\n\x1a\n"
 TAILLE_ENTETE_PNG = 24
@@ -155,20 +158,31 @@ def valider_url(front):
     return sortie
 
 
+def valider_fichier_voisin(front, cle, extensions, libelle_extensions, dossier_source, noms_reserves=()):
+    """Contrôle commun aux champs désignant un fichier posé à côté du CV source ; retourne la première erreur trouvée."""
+    nom_fichier = front[cle]
+    ligne = front.lignes_champs[cle]
+    if any(separateur in nom_fichier for separateur in SEPARATEURS_CHEMIN):
+        return [erreur(ligne, CONTEXTE_FRONT, f"« {cle} » doit être un nom de fichier placé à côté du CV source, sans sous-dossier")]
+    if not nom_fichier.lower().endswith(extensions):
+        return [erreur(ligne, CONTEXTE_FRONT, f"« {cle} » doit être un fichier {libelle_extensions}")]
+    if nom_fichier in noms_reserves:
+        return [erreur(ligne, CONTEXTE_FRONT, f"« {cle} » porte le nom d'un fichier du gabarit ({nom_fichier}) que la copie écraserait")]
+    chemin = dossier_source / nom_fichier
+    if not chemin.is_file():
+        return [erreur(ligne, CONTEXTE_FRONT, f"« {cle} » : fichier introuvable ({chemin})")]
+    return []
+
+
 def valider_image(front, dossier_source):
     image = front.get(CLE_IMAGE)
     if not image:
         return []
     ligne = front.lignes_champs[CLE_IMAGE]
-    if any(separateur in image for separateur in SEPARATEURS_CHEMIN):
-        return [erreur(ligne, CONTEXTE_FRONT, f"« {CLE_IMAGE} » doit être un nom de fichier placé à côté du CV source, sans sous-dossier")]
-    if not image.lower().endswith(EXTENSIONS_IMAGE):
-        return [erreur(ligne, CONTEXTE_FRONT, f"« {CLE_IMAGE} » doit être un fichier .png, .jpg ou .jpeg")]
-    if image in FICHIERS_RESERVES:
-        return [erreur(ligne, CONTEXTE_FRONT, f"« {CLE_IMAGE} » porte le nom d'un fichier du gabarit ({image}) que la copie écraserait")]
+    anomalies = valider_fichier_voisin(front, CLE_IMAGE, EXTENSIONS_IMAGE, LIBELLE_EXTENSIONS_IMAGE, dossier_source, FICHIERS_RESERVES)
+    if anomalies:
+        return anomalies
     chemin = dossier_source / image
-    if not chemin.is_file():
-        return [erreur(ligne, CONTEXTE_FRONT, f"« {CLE_IMAGE} » : fichier introuvable ({chemin})")]
     if not image.lower().endswith(EXTENSION_PNG):
         return []
     with chemin.open(MODE_LECTURE_BINAIRE) as fichier:
@@ -181,8 +195,14 @@ def valider_image(front, dossier_source):
     return []
 
 
+def valider_cv_pdf(front, dossier_source):
+    if not front.get(CLE_CV_PDF):
+        return []
+    return valider_fichier_voisin(front, CLE_CV_PDF, (EXTENSION_PDF,), EXTENSION_PDF, dossier_source)
+
+
 def valider_front(front, dossier_source):
-    sortie = valider_url(front) + valider_image(front, dossier_source)
+    sortie = valider_url(front) + valider_image(front, dossier_source) + valider_cv_pdf(front, dossier_source)
     for cle in CHAMPS_FRONT:
         if not front.get(cle):
             sortie.append(erreur(front.lignes_champs.get(cle, LIGNE_FRONT), CONTEXTE_FRONT, f"champ « {cle} » manquant ou vide"))
