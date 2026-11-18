@@ -1,6 +1,7 @@
 """Génère le site (index.html + fichiers statiques) à partir d'un fichier markdown de données et du gabarit src/index.html."""
 
 import argparse
+import hashlib
 import html
 import json
 import re
@@ -97,6 +98,10 @@ ATTRIBUTS_ICONE_DECORATIVE = 'aria-hidden="true" focusable="false"'
 OPTION_CAPTURE = "--screenshot="
 OPTION_TAILLE_FENETRE = "--window-size="
 DELAI_RENDU_SECONDES = 60
+FICHIER_CSS = "style.css"
+LONGUEUR_EMPREINTE = 8
+CLE_VERSION_CSS = "version_css"
+CLE_VERSION_FAVICON = "version_favicon"
 FICHIERS_SANS_FRAGMENTS = (FICHIER_FAVICON, FICHIER_ROBOTS, FICHIER_SITEMAP)
 FICHIERS_RENDUS = (FICHIER_GABARIT, FICHIER_GABARIT_OG, FICHIER_GABARIT_ICONE, *FICHIERS_SANS_FRAGMENTS)
 
@@ -528,6 +533,11 @@ def appliquer(gabarit, valeurs, fragments):
     return texte
 
 
+def empreinte(fichier):
+    """Empreinte courte du contenu d'un fichier, utilisée pour versionner son URL et contourner les caches."""
+    return hashlib.sha256(fichier.read_bytes()).hexdigest()[:LONGUEUR_EMPREINTE]
+
+
 def rendre_gabarit(gabarit, destination, valeurs, fragments):
     texte = appliquer(gabarit.read_text(encoding="utf-8"), valeurs, fragments)
     destination.write_bytes(texte.encode("utf-8"))
@@ -552,6 +562,8 @@ def construire(source, destination):
     for fichier in dossier_gabarit.iterdir():
         if fichier.is_file() and fichier.name not in FICHIERS_RENDUS:
             shutil.copy2(fichier, destination / fichier.name)
+    valeurs[CLE_VERSION_CSS] = empreinte(dossier_gabarit / FICHIER_CSS)
+    valeurs[CLE_VERSION_FAVICON] = empreinte(dossier_gabarit / FICHIER_FAVICON)
     image_fournie = valeurs.get(CLE_IMAGE)
     if image_fournie:
         shutil.copy2(source.parent / image_fournie, destination / image_fournie)
