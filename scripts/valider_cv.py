@@ -330,11 +330,12 @@ def valider_section(section, icones, competences):
         return sortie
     if not section.entrees:
         sortie.append(erreur(section.ligne, nom, "aucune entrée (###)"))
-    titres = {}
+    cles = {}
     for entree in section.entrees:
-        if entree.titre in titres:
-            sortie.append(erreur(entree.ligne, nom, f"entrée « {entree.titre} » en double (première ligne {titres[entree.titre]})"))
-        titres.setdefault(entree.titre, entree.ligne)
+        cle = (entree.titre, entree.champs.get(ENTREPRISE))
+        if cle in cles:
+            sortie.append(erreur(entree.ligne, nom, f"entrée « {entree.titre} » en double (première ligne {cles[cle]})"))
+        cles.setdefault(cle, entree.ligne)
         sortie.extend(valider_entree(section, entree, icones, competences))
     return sortie
 
