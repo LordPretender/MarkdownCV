@@ -24,7 +24,7 @@ Texte: Analyste développeur attachée à la fiabilité des applications métier
 
 Icône: briefcase
 Titre: Expérience professionnelle
-Intro: Mes derniers postes. Cliquez sur une carte pour afficher le détail.
+Intro: Mes derniers postes.
 
 ### Développeuse full stack
 
@@ -138,7 +138,7 @@ Icône: users
 
 Icône: layers
 Titre: Projets
-Intro: Réalisations marquantes. Cliquez sur une carte pour afficher le détail.
+Intro: Réalisations marquantes.
 
 ### Portail de suivi des demandes
 
@@ -215,7 +215,7 @@ Le goût de l'automatisation et le soin apporté à la documentation.
 
 Icône: user
 Titre: Stages
-Intro: Mes premières missions de développement. Cliquez sur une carte pour afficher le détail.
+Intro: Mes premières missions de développement.
 
 ### Stagiaire développeuse web
 

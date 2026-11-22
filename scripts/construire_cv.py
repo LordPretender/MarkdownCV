@@ -230,7 +230,13 @@ def rendre_carte(id_detail, logo, titre, sous_titre, chips, cliquable):
     ]
     if not cliquable:
         return ['<li class="card static">', *corps, "</li>"]
-    return [f'<li><button class="card" type="button" data-detail="{id_detail}">', *corps, "</button></li>"]
+    chevron = f'  <svg class="ico card-chevron" {ATTRIBUTS_ICONE_DECORATIVE}><use href="#i-chevron"/></svg>'
+    return [
+        f'<li><button class="card" type="button" aria-haspopup="dialog" data-detail="{id_detail}">',
+        *corps,
+        chevron,
+        "</button></li>",
+    ]
 
 
 def rendre_postes(section, nom_section, prefixe, competences):

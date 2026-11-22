@@ -207,6 +207,11 @@ a.card:hover,
 button.card:focus-visible,
 a.card:focus-visible { border-color: var(--accent); transform: translateY(-1px); outline: none; }
 
+.card-chevron { width: 1.1rem; height: 1.1rem; flex-shrink: 0; color: var(--muted); transition: transform 0.15s, color 0.15s; }
+button.card:hover .card-chevron,
+button.card:focus-visible .card-chevron { transform: translateX(3px); color: var(--accent); }
+.card.static { cursor: default; }
+
 .logo {
   display: inline-flex;
   align-items: center;
@@ -423,14 +428,14 @@ body { padding-bottom: 5rem; }
 
 @media (max-width: 640px) {
   .card { flex-wrap: wrap; }
-  .card > .chips { flex-basis: 100%; justify-content: flex-start; padding-left: 3.65rem; }
+  .card > .chips { flex-basis: 100%; justify-content: flex-start; padding-left: 3.65rem; order: 1; }
   .lang-list .card,
   .link-list .card { flex-wrap: nowrap; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .overlay, .drawer, .card, .nav a { transition: none; }
+  .overlay, .drawer, .card, .card-chevron, .nav a { transition: none; }
 }
 
 @media print {
