@@ -117,7 +117,8 @@ CHAMPS_ENTREE_REQUIS = {
     SECTION_LIENS: [URL, LOGO],
 }
 CHAMPS_ENTREE_OPTIONNELS = {SECTION_PROJETS: [TITRE_DETAIL, PERIODE_DETAIL]}
-SECTIONS_AVEC_BLOCS = [SECTION_EXPERIENCE, SECTION_PROJETS, SECTION_STAGES]
+SECTIONS_RATTACHANT_COMPETENCES = [SECTION_EXPERIENCE, SECTION_PROJETS, SECTION_STAGES]
+SECTIONS_AVEC_BLOCS = SECTIONS_RATTACHANT_COMPETENCES + [SECTION_DIPLOMES]
 SECTIONS_AVEC_PUCES = [SECTION_COMPETENCES, SECTION_INTERETS]
 CHAMPS_PERIODE = [PERIODE, PERIODE_DETAIL]
 
@@ -318,6 +319,8 @@ def valider_entree(section, entree, icones, competences):
     if nom not in SECTIONS_AVEC_BLOCS and entree.blocs:
         sortie.append(erreur(entree.blocs[0].ligne, contexte, "blocs (####) ignorés par le rendu dans cette section"))
     for bloc in entree.blocs:
+        if nom == SECTION_DIPLOMES and bloc.nom == BLOC_COMPETENCES:
+            sortie.append(erreur(bloc.ligne, contexte, f"bloc « {BLOC_COMPETENCES} » réservé aux expériences, projets et stages : utiliser un bloc libre dans cette section"))
         sortie.extend(valider_bloc(bloc, contexte, competences))
     return sortie
 
@@ -345,7 +348,7 @@ def blocs_competences(sections):
     return [
         bloc
         for section in sections
-        if section.nom in SECTIONS_AVEC_BLOCS
+        if section.nom in SECTIONS_RATTACHANT_COMPETENCES
         for entree in section.entrees
         for bloc in entree.blocs
         if bloc.nom == BLOC_COMPETENCES

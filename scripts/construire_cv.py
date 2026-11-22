@@ -133,6 +133,7 @@ DOSSIER_BUILD = "build"
 PREFIXE_DETAIL_EXPERIENCE = "d-"
 PREFIXE_DETAIL_PROJET = "p-"
 PREFIXE_DETAIL_STAGE = "s-"
+PREFIXE_DETAIL_DIPLOME = "g-"
 FRAGMENT_NAV = "nav"
 FRAGMENT_DETAILS = "details"
 
@@ -297,19 +298,19 @@ def rendre_pastilles(section, icones):
     return lignes
 
 
-def rendre_diplomes(section):
-    lignes = []
-    for entree in section.entrees:
+def rendre_diplomes(section, competences):
+    cartes, details = [], []
+    for rang, entree in enumerate(section.entrees, 1):
         contexte = f"{SECTION_DIPLOMES} / {entree.titre}"
         c = entree.champs
         etablissement, periode = champ(c, ETABLISSEMENT, contexte), champ(c, PERIODE, contexte)
-        lignes.append(
-            f'<li class="card static"><span class="logo">{echapper(champ(c, LOGO, contexte))}</span>'
-            f'<span class="card-body"><span class="card-title">{echapper(entree.titre)}</span>'
-            f'<span class="card-sub">{echapper(etablissement)}</span></span>'
-            f'<span class="chips"><span class="chip">{echapper(periode)}</span></span></li>'
-        )
-    return lignes
+        logo = champ(c, LOGO, contexte)
+        id_detail = f"{PREFIXE_DETAIL_DIPLOME}{rang}"
+        cliquable = a_detail(entree)
+        cartes += rendre_carte(id_detail, logo, entree.titre, etablissement, [periode], cliquable)
+        if cliquable:
+            details += rendre_detail(id_detail, entree.titre, f"{etablissement} · {periode}", logo, entree, contexte, competences)
+    return cartes, details
 
 
 def rendre_langues(section):
@@ -529,17 +530,18 @@ def preparer(front, sections, icones):
     )
     cartes_projets, details_projets = rendre_projets(par_nom[SECTION_PROJETS], competences)
     cartes_stages, details_stages = rendre_postes(par_nom[SECTION_STAGES], SECTION_STAGES, PREFIXE_DETAIL_STAGE, competences)
+    cartes_diplomes, details_diplomes = rendre_diplomes(par_nom[SECTION_DIPLOMES], competences)
     fragments = {
         FRAGMENT_NAV: nav,
         identifiant(SECTION_EXPERIENCE): cartes_experience,
         identifiant(SECTION_COMPETENCES): rendre_pastilles(par_nom[SECTION_COMPETENCES], icones),
         identifiant(SECTION_PROJETS): cartes_projets,
         identifiant(SECTION_STAGES): cartes_stages,
-        identifiant(SECTION_DIPLOMES): rendre_diplomes(par_nom[SECTION_DIPLOMES]),
+        identifiant(SECTION_DIPLOMES): cartes_diplomes,
         identifiant(SECTION_LANGUES): rendre_langues(par_nom[SECTION_LANGUES]),
         identifiant(SECTION_INTERETS): rendre_pastilles(par_nom[SECTION_INTERETS], icones),
         identifiant(SECTION_LIENS): rendre_liens(par_nom[SECTION_LIENS]),
-        FRAGMENT_DETAILS: details_experience + details_projets + details_stages,
+        FRAGMENT_DETAILS: details_experience + details_projets + details_stages + details_diplomes,
         FRAGMENT_PARTAGE: [],
         FRAGMENT_ICONES: [],
         FRAGMENT_TELECHARGEMENT: [],
