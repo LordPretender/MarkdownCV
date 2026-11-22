@@ -136,6 +136,10 @@ PREFIXE_DETAIL_STAGE = "s-"
 FRAGMENT_NAV = "nav"
 FRAGMENT_DETAILS = "details"
 
+# Sections dont le lien de navigation n'apparaît que sur la barre verticale du bureau (la barre mobile est trop étroite pour tout afficher)
+SECTIONS_NAV_BUREAU = (SECTION_ACCUEIL, SECTION_LANGUES, SECTION_INTERETS, SECTION_LIENS)
+CLASSE_NAV_BUREAU = "nav-bureau"
+
 CLE_ACCUEIL_STATUT = "accueil_statut"
 CLE_ACCUEIL_SOUS_TITRE = "accueil_sous_titre"
 
@@ -488,8 +492,9 @@ def preparer_navigation(par_nom, icones, valeurs):
     for nom in SECTIONS:
         section = par_nom[nom]
         icone = verifier_icone(champ(section.champs, ICONE, nom), nom, icones)
+        classe = f' class="{CLASSE_NAV_BUREAU}"' if nom in SECTIONS_NAV_BUREAU else ""
         nav.append(
-            f'<a href="#{identifiant(nom)}" data-label="{echapper(nom)}" aria-label="{echapper(nom)}">'
+            f'<a href="#{identifiant(nom)}"{classe} data-label="{echapper(nom)}" aria-label="{echapper(nom)}">'
             f'<svg class="ico" {ATTRIBUTS_ICONE_DECORATIVE}><use href="#i-{icone}"/></svg></a>'
         )
         if nom == SECTION_ACCUEIL:
