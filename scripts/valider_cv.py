@@ -10,6 +10,7 @@ from pathlib import Path
 from lecture_cv import (
     BLOC_COMPETENCES,
     BLOC_ENVIRONNEMENT,
+    CATEGORIE_COMPETENCES_PERSONNELLES,
     CHAMPS_FRONT,
     CHAMPS_FRONT_OPTIONNELS,
     CLE_CV_PDF,
@@ -352,14 +353,14 @@ def blocs_competences(sections):
 
 
 def valider_competences_inutilisees(sections, competences):
-    """Avertit des compétences jamais citées dans un bloc « Compétences » ; muet tant qu'aucun bloc n'est utilisé."""
+    """Avertit des compétences jamais citées dans un bloc « Compétences » ; muet tant qu'aucun bloc n'est utilisé, et pour la catégorie des savoir-être."""
     blocs = blocs_competences(sections)
     if not blocs:
         return []
     citees = {cle_competence(libelle) for bloc in blocs for libelle in puces_du_bloc(bloc)}
     sortie = []
     for cle, (libelle, entree) in competences.items():
-        if cle not in citees:
+        if cle not in citees and entree.titre != CATEGORIE_COMPETENCES_PERSONNELLES:
             ligne = entree.lignes_puces[entree.puces.index(libelle)]
             sortie.append(avertissement(ligne, f"{SECTION_COMPETENCES} / {entree.titre}", f"compétence « {libelle} » rattachée à aucune expérience, projet ou stage"))
     return sortie
