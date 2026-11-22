@@ -253,6 +253,12 @@ Intro: Le socle académique et les formations de mon parcours.
 Période: 2016 – 2018
 Logo: UD
 
+#### Enseignements et technologies étudiés
+
+- Génie logiciel et méthodes agiles
+- Java
+- Bases de données relationnelles
+
 ### Licence Informatique
 
 Établissement: Université de Démoville
