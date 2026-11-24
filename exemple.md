@@ -230,12 +230,6 @@ Logo: AP
 - Correction d'anomalies signalées par les utilisateurs
 - Rédaction de la documentation technique du module réalisé
 
-#### Environnement
-
-- PHP
-- JavaScript
-- MySQL
-
 #### Compétences
 
 - SQL
