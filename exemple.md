@@ -213,7 +213,7 @@ Le goût de l'automatisation et le soin apporté à la documentation.
 
 ## Stages
 
-Icône: user
+Icône: flag
 Titre: Stages
 Intro: Mes premières missions de développement.
 
