@@ -154,8 +154,7 @@ h1 {
   padding-left: 1rem;
   border-left: 3px solid var(--accent-soft);
   font-size: 1.02rem;
-  font-style: italic;
-  color: var(--muted);
+  color: var(--text);
 }
 
 section { padding: 2.75rem 0 0; }
@@ -328,7 +327,7 @@ button.card:focus-visible .card-chevron { transform: translateX(3px); color: var
 .bullets { padding-left: 1.1rem; list-style: disc; font-size: 0.95rem; color: var(--muted); }
 .bullets li { margin-bottom: 0.4rem; }
 
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; scrollbar-gutter: stable; }
 section[id],
 header[id] { scroll-margin-top: 1rem; }
 
