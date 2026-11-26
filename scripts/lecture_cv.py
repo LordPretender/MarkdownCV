@@ -86,6 +86,8 @@ class Bloc:
     nom: str
     lignes: list = field(default_factory=list)
     ligne: int = 0
+    # Positions dans `lignes` où un nouveau paragraphe commence (ligne vide dans la source) ; `lignes` reste plat pour les puces et le validateur.
+    ruptures: list = field(default_factory=list)
 
 
 @dataclass
@@ -177,13 +179,22 @@ def lire_front_matter(lignes, anomalies=None):
     return front, fin
 
 
-def ajouter_ligne(sections, brut, numero, anomalies=None):
+def paragraphes_du_bloc(bloc):
+    """Découpe les lignes d'un bloc en paragraphes, aux ruptures (ligne vide dans la source)."""
+    debuts = [0, *bloc.ruptures, len(bloc.lignes)]
+    return [bloc.lignes[debut:fin] for debut, fin in zip(debuts, debuts[1:])]
+
+
+def ajouter_ligne(sections, brut, numero, anomalies=None, apres_vide=False):
     if not sections:
         raise ErreurContenu(f"contenu avant la première section : « {brut} »")
     section = sections[-1]
     entree = section.entrees[-1] if section.entrees else None
     if entree and entree.blocs:
-        entree.blocs[-1].lignes.append(brut)
+        bloc = entree.blocs[-1]
+        if apres_vide and bloc.lignes:
+            bloc.ruptures.append(len(bloc.lignes))
+        bloc.lignes.append(brut)
     elif entree and brut.startswith(MARQUEUR_PUCE):
         entree.puces.append(retirer_puce(brut))
         entree.lignes_puces.append(numero)
@@ -207,10 +218,13 @@ def decouper(texte, anomalies=None):
 
     sections = []
     bloc_orphelin = False
+    apres_vide = False
     for numero, ligne in enumerate(lignes[fin + 1:], fin + 2):
         brut = ligne.strip()
         if not brut:
+            apres_vide = True
             continue
+        vide_precedent, apres_vide = apres_vide, False
         if brut.startswith(MARQUEUR_BLOC):
             nom = brut[len(MARQUEUR_BLOC):]
             bloc_orphelin = not sections or not sections[-1].entrees
@@ -228,5 +242,5 @@ def decouper(texte, anomalies=None):
             bloc_orphelin = False
             sections.append(Section(brut[len(MARQUEUR_SECTION):], ligne=numero))
         elif not bloc_orphelin:
-            ajouter_ligne(sections, brut, numero, anomalies)
+            ajouter_ligne(sections, brut, numero, anomalies, vide_precedent)
     return front, sections

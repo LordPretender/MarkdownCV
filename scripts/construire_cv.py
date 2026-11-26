@@ -60,6 +60,7 @@ from lecture_cv import (
     icones_du_gabarit,
     identifiant,
     indexer_competences,
+    paragraphes_du_bloc,
     puces_du_bloc,
     sans_accents,
     titre_de_page,
@@ -206,7 +207,7 @@ def rendre_bloc(bloc, contexte, competences):
         sortie.extend(f"  <li>{echapper(i)}</li>" for i in items)
         sortie.append("</ul>")
     else:
-        sortie.append(f"<p>{echapper(' '.join(bloc.lignes))}</p>")
+        sortie.extend(f"<p>{echapper(' '.join(paragraphe))}</p>" for paragraphe in paragraphes_du_bloc(bloc))
     return sortie
 
 

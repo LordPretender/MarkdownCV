@@ -317,6 +317,7 @@ button.card:focus-visible .card-chevron { transform: translateX(3px); color: var
 #drawer-content h3:first-child { margin-top: 0; }
 
 #drawer-content p { margin: 0; font-size: 0.95rem; color: var(--muted); }
+#drawer-content p + p { margin-top: 0.6rem; }
 
 .skill-groups { margin: 0; padding: 0; list-style: none; }
 .skill-groups > li { margin-bottom: 0.8rem; }
