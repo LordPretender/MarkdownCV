@@ -126,7 +126,7 @@ Icône: tool
 - GitLab CI
 - Jira
 
-### Personnelles
+### Savoir-être
 
 Icône: users
 
